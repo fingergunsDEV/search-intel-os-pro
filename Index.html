@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Intel OS — HGM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<?!= include('CSS'); ?>
+<style>
+/* ── CSS Variables (Theme) ───────────────────────────────── */
+:root {
+  --bg-base: #F4F6FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F8FAFD;
+  --bg-sidebar: #1E293B;
+  --bg-input: #F1F3F6;
+  --bg-hover: #EFF1F5;
+  --text-primary: #0B1120;
+  --text-secondary: #334155;
+  --text-tertiary: #64748B;
+  --text-inverse: #F8FAFC;
+  --border-light: #E2E8F0;
+  --border-focus: #7C6FF7;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.10);
+  --shadow-xl: 0 20px 48px rgba(0,0,0,0.14);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  --accent-violet: #7C6FF7;
+  --accent-violet-light: #A99AFF;
+  --accent-violet-dark: #5B4FD4;
+  --accent-emerald: #10B981;
+  --accent-sky: #38BDF8;
+  --accent-amber: #F59E0B;
+  --accent-rose: #F43F5E;
+  --accent-indigo: #6366F1;
+}
+[data-theme="dark"] {
+  --bg-base: #0B1120;
+  --bg-surface: #1E293B;
+  --bg-elevated: #2D3A4F;
+  --bg-sidebar: #111827;
+  --bg-input: #2D3A4F;
+  --bg-hover: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-inverse: #0B1120;
+  --border-light: #334155;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 20px 48px rgba(0,0,0,0.8);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-base); color:var(--text-primary); font-family:var(--font-family); font-size:14px; line-height:1.6; transition:background var(--transition), color var(--transition); overflow-x:hidden; }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg-base); }
+::-webkit-scrollbar-thumb { background:var(--text-tertiary); border-radius:8px; }
+::-webkit-scrollbar-thumb:hover { background:var(--accent-violet); }
+.shell { display:flex; min-height:100vh; background:var(--bg-base); }
+.sidebar { width:260px; background:var(--bg-sidebar); color:var(--text-inverse); display:flex; flex-direction:column; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto; padding:0 0 20px 0; border-right:1px solid var(--border-light); transition:width var(--transition), transform var(--transition); z-index:100; }
+.sidebar.collapsed { width:68px; }
+.sidebar.collapsed .brand-name, .sidebar.collapsed .sb-meta, .sidebar.collapsed .nav-label, .sidebar.collapsed .nav-group-label, .sidebar.collapsed .sb-status-text { display:none; }
+.sidebar.collapsed .brand { justify-content:center; padding:16px 0; }
+.sidebar.collapsed .brand-mark svg { width:32px; height:32px; }
+.sidebar.collapsed .nav-item { justify-content:center; padding:12px; }
+.sidebar.collapsed .nav-item i { margin:0; }
+.brand { display:flex; align-items:center; gap:12px; padding:24px 20px 20px 20px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.brand-mark { width:40px; height:40px; background:var(--accent-violet); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; }
+.brand-mark i { font-size:22px; color:white; }
+.brand-name { font-weight:700; font-size:18px; letter-spacing:-0.3px; }
+.sb-meta { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; }
+.nav-scroll { flex:1; padding:16px 12px 0 12px; overflow-y:auto; }
+.nav-group-label { font-size:10px; text-transform:uppercase; letter-spacing:0.8px; color:rgba(255,255,255,0.3); padding:16px 12px 8px 12px; font-weight:600; }
+.nav-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:var(--radius-md); background:transparent; border:none; color:rgba(255,255,255,0.6); font-size:13px; font-weight:500; cursor:pointer; transition:all var(--transition); width:100%; text-align:left; margin-bottom:2px; font-family:var(--font-family); }
+.nav-item:hover { background:rgba(255,255,255,0.06); color:white; }
+.nav-item.active { background:var(--accent-violet); color:white; box-shadow:0 2px 8px rgba(124,111,247,0.3); }
+.nav-item i { width:18px; text-align:center; font-size:16px; flex-shrink:0; }
+.nav-item.active i { color:white; }
+.nav-label { white-space:nowrap; }
+.nbadge { margin-left:auto; font-size:10px; font-weight:600; padding:1px 8px; border-radius:12px; background:rgba(244,63,94,0.2); color:var(--accent-rose); }
+.sb-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+.status-indicator { width:8px; height:8px; border-radius:50%; background:var(--text-tertiary); transition:background 0.3s; }
+.status-indicator.live { background:var(--accent-emerald); box-shadow:0 0 8px rgba(16,185,129,0.5); }
+.status-indicator.connecting { background:var(--accent-amber); animation:pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:0.4;transform:scale(0.9);}50%{opacity:1;transform:scale(1.1);} }
+.sb-status-text { font-size:12px; color:rgba(255,255,255,0.5); }
+.main { flex:1; min-width:0; display:flex; flex-direction:column; background:var(--bg-base); }
+.topbar { display:flex; align-items:center; gap:16px; padding:12px 24px; background:var(--bg-surface); border-bottom:1px solid var(--border-light); flex-wrap:wrap; position:sticky; top:0; z-index:50; backdrop-filter:blur(6px); background:rgba(255,255,255,0.7); transition:background var(--transition); }
+[data-theme="dark"] .topbar { background:rgba(30,41,59,0.85); }
+.btn-collapse { background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:4px; border-radius:var(--radius-sm); transition:background var(--transition); }
+.btn-collapse:hover { background:var(--bg-hover); }
+.btn-collapse i { font-size:18px; }
+.topbar-title { font-size:18px; font-weight:700; color:var(--text-primary); letter-spacing:-0.3px; }
+.topbar-title span { color:var(--accent-violet); }
+.tb-chips { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { font-size:11px; padding:4px 12px; border-radius:20px; background:var(--bg-elevated); color:var(--text-secondary); border:1px solid var(--border-light); }
+.chip-emerald { background:rgba(16,185,129,0.12); color:var(--accent-emerald); border-color:rgba(16,185,129,0.2); }
+.chip-violet { background:rgba(124,111,247,0.12); color:var(--accent-violet); border-color:rgba(124,111,247,0.2); }
+.chip-amber { background:rgba(245,158,11,0.12); color:var(--accent-amber); border-color:rgba(245,158,11,0.2); }
+.chip-rose { background:rgba(244,63,94,0.12); color:var(--accent-rose); border-color:rgba(244,63,94,0.2); }
+.chip-sky { background:rgba(56,189,248,0.12); color:var(--accent-sky); border-color:rgba(56,189,248,0.2); }
+.chip-muted { opacity:0.7; }
+.tb-spacer { flex:1; }
+.tb-right { display:flex; align-items:center; gap:12px; }
+.tb-clock { font-variant-numeric:tabular-nums; font-size:13px; font-weight:500; color:var(--text-secondary); }
+.tb-divider { width:1px; height:24px; background:var(--border-light); }
+.date-pill { display:flex; align-items:center; gap:6px; background:var(--bg-elevated); padding:4px 10px 4px 8px; border-radius:20px; border:1px solid var(--border-light); }
+.date-pill select { background:transparent; border:none; color:var(--text-primary); font-size:12px; font-weight:500; outline:none; cursor:pointer; }
+.btn-refresh { background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; border-radius:50%; transition:all var(--transition); }
+.btn-refresh:hover { background:var(--bg-hover); color:var(--accent-violet); }
+.btn-refresh.spinning i { animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.btn-auth { display:flex; align-items:center; gap:6px; padding:6px 16px; border-radius:20px; background:var(--accent-violet); color:white; border:none; font-size:12px; font-weight:600; cursor:pointer; transition:all var(--transition); }
+.btn-auth:hover { background:var(--accent-violet-dark); transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,111,247,0.3); }
+.btn-auth.signed-in { background:var(--bg-elevated); color:var(--text-secondary); border:1px solid var(--border-light); }
+.btn-auth.signed-in:hover { background:var(--bg-hover); }
+.theme-toggle { background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; border-radius:50%; transition:background var(--transition); }
+.theme-toggle:hover { background:var(--bg-hover); }
+.theme-toggle i { font-size:15px; }
+.drillbar { display:none; align-items:center; gap:8px; padding:10px 24px; background:var(--bg-surface); border-bottom:1px solid var(--border-light); font-size:13px; }
+.drillbar.visible { display:flex; }
+.drill-back { cursor:pointer; color:var(--text-tertiary); transition:color var(--transition); }
+.drill-back:hover { color:var(--accent-violet); }
+.drill-sep { color:var(--text-tertiary); }
+.drill-current { font-weight:600; color:var(--text-primary); }
+.badge-sky { background:rgba(56,189,248,0.12); color:var(--accent-sky); padding:2px 10px; border-radius:12px; font-size:11px; }
+.tabbar { display:flex; gap:4px; padding:12px 24px 0 24px; border-bottom:1px solid var(--border-light); background:var(--bg-base); flex-wrap:wrap; }
+.tab { padding:8px 16px; font-size:13px; font-weight:500; color:var(--text-tertiary); background:transparent; border:none; border-bottom:2px solid transparent; cursor:pointer; transition:all var(--transition); }
+.tab:hover { color:var(--text-primary); background:var(--bg-hover); border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+.tab.active { color:var(--accent-violet); border-bottom-color:var(--accent-violet); background:transparent; }
+.content { flex:1; padding:20px 24px 24px 24px; overflow-y:auto; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.g3r { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+.g3e { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.gap-top { margin-top:16px; }
+.span2 { grid-column:span 2; }
+.card { background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:20px; transition:all var(--transition); box-shadow:var(--shadow-sm); }
+.card:hover { box-shadow:var(--shadow-md); }
+.card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.card-title { font-size:14px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+.card-title i { color:var(--text-tertiary); font-size:16px; }
+.card-actions { display:flex; align-items:center; gap:8px; }
+.card-body { font-size:13px; color:var(--text-secondary); }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-bottom:16px; }
+.kpi { background:var(--bg-surface); border-radius:var(--radius-md); padding:16px; border:1px solid var(--border-light); position:relative; transition:all var(--transition); }
+.kpi:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.kpi-accent { width:28px; height:4px; border-radius:2px; margin-bottom:8px; }
+.kpi-label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); }
+.kpi-val { font-size:24px; font-weight:700; margin:4px 0 2px 0; color:var(--text-primary); }
+.kpi-sub { font-size:11px; color:var(--text-tertiary); }
+.kpi-bg-glyph { position:absolute; right:12px; bottom:12px; font-size:28px; opacity:0.06; font-weight:700; }
+.chart-wrap { position:relative; width:100%; height:200px; }
+.chart-wrap.tall { height:300px; }
+.chart-wrap canvas { width:100% !important; height:100% !important; }
+.tbl-wrap { overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--border-light); }
+.tbl-wrap table { width:100%; border-collapse:collapse; font-size:12px; }
+.tbl-wrap th { background:var(--bg-elevated); color:var(--text-secondary); font-weight:600; text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-light); white-space:nowrap; }
+.tbl-wrap td { padding:10px 14px; border-bottom:1px solid var(--border-light); color:var(--text-primary); }
+.tbl-wrap tr:last-child td { border-bottom:none; }
+.tbl-wrap tr:hover td { background:var(--bg-hover); }
+.tbl-wrap.tall { max-height:400px; overflow-y:auto; }
+.td-mono { font-family:var(--font-mono); font-size:12px; }
+.td-url { font-size:11px; color:var(--accent-sky); word-break:break-all; max-width:220px; }
+.td-dim { color:var(--text-tertiary); }
+.pos-g { color:var(--accent-emerald); font-weight:600; }
+.pos-o { color:var(--accent-amber); font-weight:600; }
+.pos-b { color:var(--text-tertiary); }
+.badge { font-size:10px; font-weight:600; padding:2px 10px; border-radius:12px; text-transform:uppercase; letter-spacing:0.4px; }
+.badge-emerald { background:rgba(16,185,129,0.12); color:var(--accent-emerald); }
+.badge-rose { background:rgba(244,63,94,0.12); color:var(--accent-rose); }
+.badge-amber { background:rgba(245,158,11,0.12); color:var(--accent-amber); }
+.badge-violet { background:rgba(124,111,247,0.12); color:var(--accent-violet); }
+.badge-sky { background:rgba(56,189,248,0.12); color:var(--accent-sky); }
+.badge-muted { background:var(--bg-elevated); color:var(--text-tertiary); }
+.badge-purple { background:rgba(167,139,250,0.12); color:#a78bfa; }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; cursor:pointer; border:none; transition:all var(--transition); }
+.btn-primary { background:var(--accent-violet); color:white; }
+.btn-primary:hover { background:var(--accent-violet-dark); box-shadow:0 4px 12px rgba(124,111,247,0.3); transform:translateY(-1px); }
+.btn-ghost { background:transparent; color:var(--text-secondary); border:1px solid var(--border-light); }
+.btn-ghost:hover { background:var(--bg-hover); }
+.btn-sm { padding:4px 10px; font-size:11px; }
+.btn-success { background:rgba(16,185,129,0.12); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); }
+.btn-success:hover { background:rgba(16,185,129,0.2); }
+.btn-warning { background:rgba(245,158,11,0.12); color:var(--accent-amber); border:1px solid rgba(245,158,11,0.2); }
+.btn-warning:hover { background:rgba(245,158,11,0.2); }
+.btn-danger { background:rgba(244,63,94,0.12); color:var(--accent-rose); border:1px solid rgba(244,63,94,0.2); }
+.btn-danger:hover { background:rgba(244,63,94,0.2); }
+.empty-state { text-align:center; padding:40px 20px; color:var(--text-tertiary); }
+.empty-state i { font-size:48px; color:var(--text-tertiary); opacity:0.3; }
+.empty-state h4 { font-size:16px; color:var(--text-primary); margin-bottom:4px; }
+.empty-state p { font-size:13px; }
+.copilot-wrap { background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border-light); display:flex; flex-direction:column; height:500px; }
+.copilot-head { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-light); }
+.copilot-title { display:flex; align-items:center; gap:8px; font-weight:600; }
+.copilot-dot { width:8px; height:8px; border-radius:50%; background:var(--accent-emerald); animation:pulse 1.5s infinite; }
+.copilot-msgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.msg-user, .msg-ai { max-width:85%; padding:10px 14px; border-radius:var(--radius-md); font-size:13px; line-height:1.5; }
+.msg-user { align-self:flex-end; background:var(--accent-violet); color:white; border-bottom-right-radius:4px; }
+.msg-ai { align-self:flex-start; background:var(--bg-elevated); color:var(--text-primary); border-bottom-left-radius:4px; }
+.copilot-input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border-light); align-items:center; flex-wrap:wrap; }
+.copilot-input { flex:1; padding:8px 14px; border-radius:var(--radius-md); border:1px solid var(--border-light); background:var(--bg-input); color:var(--text-primary); font-size:13px; outline:none; transition:border var(--transition); }
+.copilot-input:focus { border-color:var(--accent-violet); }
+.copilot-send { background:var(--accent-violet); border:none; color:white; padding:8px 12px; border-radius:var(--radius-md); cursor:pointer; transition:background var(--transition); }
+.copilot-send:hover { background:var(--accent-violet-dark); }
+.copilot-thinking { display:flex; gap:4px; padding:8px 0; align-items:center; }
+.copilot-thinking span { width:6px; height:6px; background:var(--text-tertiary); border-radius:50%; animation:bounce 1.2s infinite; }
+.copilot-thinking span:nth-child(2) { animation-delay:0.2s; }
+.copilot-thinking span:nth-child(3) { animation-delay:0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);} }
+.config-grid { display:flex; flex-direction:column; gap:16px; }
+.config-row { display:flex; flex-direction:column; gap:4px; }
+.config-label { font-size:12px; font-weight:600; color:var(--text-secondary); }
+.config-input, .config-select { padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:var(--bg-input); color:var(--text-primary); font-size:13px; outline:none; transition:border var(--transition); }
+.config-input:focus, .config-select:focus { border-color:var(--accent-violet); }
+.config-hint { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+.setup-box { padding:16px 0; }
+.setup-step { display:flex; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-light); font-size:13px; }
+.step-num { width:24px; height:24px; background:var(--accent-violet); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+.pos-dist { display:flex; justify-content:space-around; align-items:flex-end; height:80px; padding:0 8px; }
+.pos-col { display:flex; flex-direction:column; align-items:center; flex:1; }
+.pos-fill { width:100%; max-width:28px; border-radius:4px 4px 0 0; transition:height 0.5s ease; min-height:4px; }
+.pos-lbl { font-size:10px; color:var(--text-tertiary); margin-top:4px; }
+#toasts { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { display:flex; align-items:flex-start; gap:12px; padding:14px 18px; background:var(--bg-surface); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); border-left:4px solid var(--accent-violet); min-width:280px; max-width:400px; animation:slideIn 0.3s ease; border:1px solid var(--border-light); }
+.toast-ok { border-left-color:var(--accent-emerald); }
+.toast-err { border-left-color:var(--accent-rose); }
+.toast-warn { border-left-color:var(--accent-amber); }
+.toast-info { border-left-color:var(--accent-sky); }
+.toast-icon { width:20px; height:20px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:2; }
+.toast-ok .toast-icon { color:var(--accent-emerald); }
+.toast-err .toast-icon { color:var(--accent-rose); }
+.toast-warn .toast-icon { color:var(--accent-amber); }
+.toast-info .toast-icon { color:var(--accent-sky); }
+.toast-body { flex:1; }
+.toast-title { font-weight:600; font-size:13px; color:var(--text-primary); }
+.toast-msg { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+.toast-x { background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-tertiary); padding:0 4px; }
+@keyframes slideIn { from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);} }
+.auth-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:999; align-items:center; justify-content:center; }
+.auth-overlay[style*="flex"] { display:flex; }
+.auth-card { background:var(--bg-surface); border-radius:var(--radius-xl); padding:40px; max-width:480px; width:90%; box-shadow:var(--shadow-xl); text-align:center; }
+.auth-logo { margin:0 auto 16px; width:56px; height:56px; background:var(--accent-violet); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.auth-logo i { font-size:32px; color:white; }
+.auth-card h2 { font-size:20px; font-weight:700; margin-bottom:8px; color:var(--text-primary); }
+.auth-card p { color:var(--text-secondary); font-size:14px; margin-bottom:20px; }
+.auth-perms { text-align:left; margin-bottom:24px; }
+.auth-perm { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13px; color:var(--text-secondary); }
+.auth-perm i { font-size:18px; width:24px; color:var(--accent-emerald); }
+.btn-connect { width:100%; padding:12px; border-radius:var(--radius-md); background:var(--accent-violet); color:white; border:none; font-size:15px; font-weight:600; cursor:pointer; transition:all var(--transition); display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-connect:hover { background:var(--accent-violet-dark); box-shadow:0 4px 16px rgba(124,111,247,0.4); transform:translateY(-1px); }
+.opp-bar-wrap { display:flex; align-items:center; gap:8px; }
+.opp-bar-track { flex:1; height:4px; background:var(--bg-elevated); border-radius:4px; overflow:hidden; }
+.opp-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
+.statusbar { padding:8px 28px; background:var(--bg-surface); border-top:1px solid var(--border-light); display:flex; flex-wrap:wrap; align-items:center; gap:12px 28px; font-size:12px; color:var(--text-tertiary); }
+.statusbar .sb-item { display:flex; align-items:center; gap:6px; }
+.statusbar .sb-item i { font-size:14px; width:16px; text-align:center; color:var(--text-tertiary); }
+.statusbar .sb-item span { color:var(--text-secondary); }
+.conn-item { padding:10px 14px; border:1px solid var(--border-light); border-radius:var(--radius-md); background:var(--bg-elevated); }
+.conn-item .badge { font-size:12px; min-width:80px; text-align:center; }
+.filter-input-wrap { display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0 10px; }
+.filter-input-wrap i { color:var(--text-tertiary); font-size:13px; }
+.filter-input { border:none; background:transparent; padding:6px 0; font-size:12px; color:var(--text-primary); outline:none; width:160px; }
+.filter-input::placeholder { color:var(--text-tertiary); }
+.score-ring-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.score-ring { position:relative; width:100px; height:100px; }
+.score-ring svg { transform:rotate(-90deg); }
+.score-ring .bg-track { fill:none; stroke:var(--bg-elevated); stroke-width:8; }
+.score-ring .fg-track { fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+.score-val { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-mono); }
+.score-num { font-size:22px; font-weight:700; line-height:1; }
+.score-lbl { font-size:9px; color:var(--text-tertiary); letter-spacing:0.06em; text-transform:uppercase; margin-top:2px; }
+.audit-check { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.audit-check:last-child { border-bottom:none; }
+.acheck-icon { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.acheck-icon i { font-size:10px; }
+.aci-pass { background:rgba(16,185,129,0.12); color:var(--accent-emerald); }
+.aci-fail { background:rgba(244,63,94,0.12); color:var(--accent-rose); }
+.aci-warn { background:rgba(245,158,11,0.12); color:var(--accent-amber); }
+.aci-info { background:rgba(56,189,248,0.12); color:var(--accent-sky); }
+.acheck-body { flex:1; }
+.acheck-title { font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:2px; }
+.acheck-desc { font-size:11px; color:var(--text-secondary); line-height:1.6; }
+.acheck-fix { font-size:10px; color:var(--accent-violet-light); margin-top:4px; font-style:italic; }
+.schema-out { background:var(--bg-base); border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:14px; font-family:var(--font-mono); font-size:11px; color:var(--accent-emerald); line-height:1.7; max-height:300px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; }
+.rewrite-pane { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.pane-label { font-size:10px; font-weight:600; color:var(--text-tertiary); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.pane-body { background:var(--bg-base); border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:12px; font-size:12px; color:var(--text-secondary); line-height:1.8; min-height:200px; max-height:400px; overflow-y:auto; white-space:pre-wrap; }
+.checklist-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.checklist-item:last-child { border-bottom:none; }
+.ci-check { width:18px; height:18px; border-radius:4px; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px; cursor:pointer; border:1px solid var(--border-light); transition:all 0.15s; }
+.ci-check.done { background:var(--accent-violet); border-color:var(--accent-violet); }
+.ci-check.done i { color:white; font-size:10px; display:block; }
+.ci-check i { display:none; }
+.ci-body { flex:1; }
+.ci-title { font-size:12px; font-weight:500; color:var(--text-primary); }
+.ci-title.done { text-decoration:line-through; color:var(--text-tertiary); }
+.ci-sub { font-size:11px; color:var(--text-tertiary); margin-top:2px; line-height:1.5; }
+.ci-tag { margin-left:auto; flex-shrink:0; }
+.progbar { height:6px; background:var(--bg-elevated); border-radius:3px; overflow:hidden; margin-top:4px; }
+.progfill { height:100%; border-radius:3px; transition:width 0.5s ease; }
+.ptest-result { background:var(--bg-elevated); border-radius:var(--radius-sm); padding:14px; margin-top:8px; }
+.ptest-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:8px; }
+.ptest-engine { font-size:11px; font-weight:600; color:var(--text-tertiary); letter-spacing:0.05em; text-transform:uppercase; }
+.ptest-body { font-size:12px; color:var(--text-secondary); line-height:1.8; }
+.igrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.iitem { background:var(--bg-elevated); border-radius:var(--radius-sm); padding:10px 12px; }
+.ilbl { font-size:10px; font-weight:600; color:var(--text-tertiary); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:4px; }
+.ival { font-size:18px; font-weight:700; font-family:var(--font-mono); letter-spacing:-0.02em; }
+.isub { font-size:10px; color:var(--text-tertiary); margin-top:2px; }
+@media(max-width:1024px){ .g2{grid-template-columns:1fr;} .g3r{grid-template-columns:1fr;} .span2{grid-column:span 1;} .rewrite-pane{grid-template-columns:1fr;} }
+@media(max-width:768px){
+  .sidebar{width:68px;}
+  .sidebar .brand-name,.sidebar .sb-meta,.sidebar .nav-label,.sidebar .nav-group-label,.sidebar .sb-status-text{display:none;}
+  .sidebar .brand{justify-content:center;padding:16px 0;}
+  .sidebar .brand-mark svg{width:28px;height:28px;}
+  .sidebar .nav-item{justify-content:center;padding:10px;}
+  .sidebar .nav-item i{margin:0;}
+  .topbar{padding:8px 16px;gap:8px;}
+  .topbar-title{font-size:16px;}
+  .tb-chips{display:none;}
+  .tb-right{gap:6px;}
+  .date-pill{padding:2px 6px;}
+  .date-pill select{font-size:10px;}
+  .content{padding:12px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .auth-card{padding:24px;}
+  .g3e{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){ .kpi-grid{grid-template-columns:1fr;} .topbar-title{font-size:14px;} .btn-auth span{display:none;} .g3e{grid-template-columns:1fr;} }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(24px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);} }
+.content .card { opacity:0; animation:fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) forwards; }
+.content .card:nth-child(1){animation-delay:0.02s;}
+.content .card:nth-child(2){animation-delay:0.06s;}
+.content .card:nth-child(3){animation-delay:0.10s;}
+.content .card:nth-child(4){animation-delay:0.14s;}
+.content .card:nth-child(5){animation-delay:0.18s;}
+.content .card:nth-child(6){animation-delay:0.22s;}
+.content .card:nth-child(7){animation-delay:0.26s;}
+.content .card:nth-child(8){animation-delay:0.30s;}
+.content .card:nth-child(9){animation-delay:0.34s;}
+.content .card:nth-child(10){animation-delay:0.38s;}
+.kpi-grid .kpi { opacity:0; animation:fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) forwards; }
+.kpi-grid .kpi:nth-child(1){animation-delay:0.02s;}
+.kpi-grid .kpi:nth-child(2){animation-delay:0.06s;}
+.kpi-grid .kpi:nth-child(3){animation-delay:0.10s;}
+.kpi-grid .kpi:nth-child(4){animation-delay:0.14s;}
+.kpi-grid .kpi:nth-child(5){animation-delay:0.18s;}
+.kpi-grid .kpi:nth-child(6){animation-delay:0.22s;}
+.kpi-grid .kpi:nth-child(7){animation-delay:0.26s;}
+.kpi-grid .kpi:nth-child(8){animation-delay:0.30s;}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fas fa-robot"></i></div>
+      <div><div class="brand-name">Search Intel</div><div class="sb-meta">HGM · AEO/GEO/SEO OS</div></div>
+    </div>
+    <div class="nav-scroll">
+      <div class="nav-group-label">Analytics</div>
+      <button class="nav-item active" data-view="dashboard"><i class="fas fa-th-large"></i><span class="nav-label">Overview</span></button>
+      <button class="nav-item" data-view="gsc"><i class="fas fa-search"></i><span class="nav-label">Search Console</span></button>
+      <button class="nav-item" data-view="ga4"><i class="fas fa-chart-line"></i><span class="nav-label">Analytics 4</span></button>
+      <div class="nav-group-label">Intelligence</div>
+      <button class="nav-item" data-view="aeo"><i class="fas fa-rocket"></i><span class="nav-label">AEO &amp; GEO Intel</span></button>
+      <button class="nav-item" data-view="opportunities"><i class="fas fa-bolt"></i><span class="nav-label">Opportunities</span><span class="nbadge" id="nav-opp-count" style="display:none">–</span></button>
+      <button class="nav-item" data-view="competitors"><i class="fas fa-users"></i><span class="nav-label">Competitors</span></button>
+      <button class="nav-item" data-view="cannibalization"><i class="fas fa-exclamation-triangle"></i><span class="nav-label">Cannibalization</span></button>
+      <div class="nav-group-label">AI Tools</div>
+      <button class="nav-item" data-view="copilot"><i class="fas fa-robot"></i><span class="nav-label">AI Copilot</span></button>
+      <button class="nav-item" data-view="audit"><i class="fas fa-shield-alt"></i><span class="nav-label">Site Audit</span></button>
+      <button class="nav-item" data-view="page_auditor"><i class="fas fa-file-alt"></i><span class="nav-label">Page Auditor</span></button>
+      <button class="nav-item" data-view="schema_gen"><i class="fas fa-code"></i><span class="nav-label">Schema Generator</span></button>
+      <button class="nav-item" data-view="content_rewriter"><i class="fas fa-pen-fancy"></i><span class="nav-label">Content Rewriter</span></button>
+      <button class="nav-item" data-view="prompt_tester"><i class="fas fa-comment-dots"></i><span class="nav-label">Prompt Tester</span></button>
+      <button class="nav-item" data-view="geo_checklist"><i class="fas fa-check-double"></i><span class="nav-label">GEO Checklist</span></button>
+      <div class="nav-group-label">Setup</div>
+      <button class="nav-item" data-view="config"><i class="fas fa-cog"></i><span class="nav-label">API Config</span></button>
+    </div>
+    <div class="sb-footer">
+      <div class="status-indicator" id="status-dot"></div>
+      <span class="sb-status-text" id="status-text">Not connected</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="btn-collapse" id="btn-collapse"><i class="fas fa-bars"></i></button>
+      <div class="topbar-title">Search <span>Intel OS</span></div>
+      <div class="tb-chips">
+        <span class="chip chip-muted" id="chip-gsc">GSC: –</span>
+        <span class="chip chip-muted" id="chip-ga4">GA4: –</span>
+        <span class="chip chip-violet" id="chip-engine">Ready</span>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="tb-right">
+        <span class="tb-clock" id="tb-clock">00:00:00</span>
+        <div class="tb-divider"></div>
+        <div class="date-pill">
+          <i class="fas fa-calendar-alt" style="font-size:12px;color:var(--text-tertiary);"></i>
+          <select id="date-range">
+            <option value="7">Last 7 days</option>
+            <option value="28" selected>Last 28 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 12 months</option>
+          </select>
+        </div>
+        <button class="btn-refresh" id="btn-refresh" title="Refresh data"><i class="fas fa-sync-alt"></i></button>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme"><i class="fas fa-moon"></i></button>
+        <button class="btn-auth" id="btn-auth"><i class="fas fa-plug"></i><span>Authorize App</span></button>
+      </div>
+    </div>
+
+    <div class="drillbar" id="drillbar">
+      <i class="fas fa-arrow-left" style="font-size:12px;"></i>
+      <span class="drill-back" onclick="App.clearDrill()">All Queries</span>
+      <span class="drill-sep">›</span>
+      <span class="drill-current" id="drill-label"></span>
+      <div style="margin-left:auto"><span class="badge badge-sky" id="drill-count"></span></div>
+    </div>
+
+    <div class="tabbar" id="tabbar"></div>
+    <div class="content" id="content"></div>
+
+    <div class="statusbar">
+      <div class="sb-item" id="sb-sync"><i class="fas fa-sync-alt"></i>Never synced</div>
+      <div class="sb-item"><i class="fas fa-globe"></i><span id="sb-domain">No domain configured</span></div>
+      <div class="sb-item"><i class="fas fa-search"></i><span id="sb-qcount">0 queries</span></div>
+      <div class="sb-item" style="margin-left:auto"><i class="fas fa-shield-alt"></i>HGM Search Intel OS v5.0</div>
+    </div>
+  </div>
+</div>
+
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo"><i class="fas fa-robot"></i></div>
+    <h2>Authorize Search Intel</h2>
+    <p>Grant permission to access your Search Console and Analytics data securely through your Google session.</p>
+    <div class="auth-perms">
+      <div class="auth-perm"><i class="fas fa-check-circle"></i>Direct API Connection</div>
+      <div class="auth-perm"><i class="fas fa-check-circle"></i>No OAuth Client Configuration Required</div>
+      <div class="auth-perm"><i class="fas fa-check-circle"></i>Read-only access to SEO data</div>
+    </div>
+    <button class="btn-connect" id="overlay-auth-btn"><i class="fas fa-plug"></i>Authorize via Google</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  SEARCH INTEL OS v5.0 — HGM (Apps Script, ES5 compatible)
+//  No spread, no optional chaining, no arrow functions.
+// ════════════════════════════════════════════════════════════
+
+// ── CONFIG ───────────────────────────────────────────────
+var CFG = {
+  GSC_SITE:  localStorage.getItem('si_gsc_site') || '',
+  GA4_PROP:  localStorage.getItem('si_ga4_prop') || '',
+};
+
+// ── STATE ────────────────────────────────────────────────
+var S = {
+  token: null, tokenExp: null,
+  dateRange: 28,
+  view: 'dashboard', tab: 0,
+  drill: null,
+  filterText: '',
+  gscRows: null, gscPages: null, gscTs: null, gscDevices: null,
+  ga4Overview: null, ga4Channels: null, ga4Pages: null, ga4Ts: null,
+  charts: {},
+  copilotHistory: [],
+  lastSync: null,
+  engineMetrics: null,
+  geoChecklist: JSON.parse(localStorage.getItem('si_geochecklist')||'{}'),
+  auditCache: JSON.parse(localStorage.getItem('si_auditcache')||'{}'),
+};
+
+// ── VIEWS ────────────────────────────────────────────────
+var VIEWS = {
+  dashboard:      { label:'Overview',        tabs:['Summary','Performance Trend','Top Queries','Top Pages'] },
+  gsc:            { label:'Search Console',  tabs:['Query Analytics','Position Map','CTR Analysis','Device Split'] },
+  ga4:            { label:'Analytics 4',     tabs:['Overview','Channels','Pages','Trends'] },
+  aeo:            { label:'AEO & GEO Intel', tabs:['AI Trigger Detection','Intent Radar','Snippet Matrix','GEO Signals','Zero-Click Risk'] },
+  opportunities:  { label:'Opportunities',   tabs:['Quick Wins','Featured Snippet Targets','Ranking Gaps'] },
+  competitors:    { label:'Competitors',     tabs:['Market Share','Citation Tracking'] },
+  cannibalization:{ label:'Cannibalization', tabs:['Conflict Detection','Keyword Overlap'] },
+  copilot:        { label:'AI Copilot',      tabs:['Chat','Auto-Insights'] },
+  audit:          { label:'Site Audit',      tabs:['Overview','Technical SEO','Core Web Vitals','Accessibility','Security','Mobile Usability','Performance','Content Quality','Links & Crawlability'] },
+  page_auditor:   { label:'Page Auditor',    tabs:['AEO / GEO Page Audit','Audit History'] },
+  schema_gen:     { label:'Schema Generator',tabs:['Schema Generator','Templates'] },
+  content_rewriter:{label:'Content Rewriter',tabs:['Rewrite for AI Citation','Batch Analyzer'] },
+  prompt_tester:  { label:'Prompt Tester',   tabs:['Brand Visibility Tester','Prompt Bank'] },
+  geo_checklist:  { label:'GEO Checklist',   tabs:['Full Checklist','Technical','Content','Entity & Authority'] },
+  config:         { label:'API Config',      tabs:['Credentials','Setup Guide','Connections'] },
+};
+
+// ── TOAST ────────────────────────────────────────────────
+var Toast = {
+  show: function(type, title, msg, dur) {
+    dur = dur || 4500;
+    var c = document.getElementById('toasts');
+    var t = document.createElement('div');
+    var icons = {
+      ok: '<svg class="toast-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+      err: '<svg class="toast-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      warn: '<svg class="toast-icon" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      info: '<svg class="toast-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    };
+    t.className = 'toast toast-' + type;
+    t.innerHTML = (icons[type]||icons.info) + '<div class="toast-body"><div class="toast-title">' + title + '</div><div class="toast-msg">' + msg + '</div></div><button class="toast-x">×</button>';
+    t.querySelector('.toast-x').onclick = function() { t.remove(); };
+    c.appendChild(t);
+    setTimeout(function() { t.remove(); }, dur);
+  }
+};
+
+// ── FORMATTERS ───────────────────────────────────────────
+var F = {
+  n: function(v) { return v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : Math.round(v).toLocaleString(); },
+  pct: function(v) { return (v*100).toFixed(1)+'%'; },
+  pos: function(v) { return (+v).toFixed(1); },
+  dur: function(v) { var m=Math.floor(v/60), s=Math.round(v%60); return m+'m '+s+'s'; },
+  date: function(d) { return typeof d==='string' && d.length===8 ? d.slice(4,6)+'/'+d.slice(6) : (d||'').slice(5); }
+};
+function posClass(p){ return p<=3?'pos-g':p<=10?'pos-o':'pos-b'; }
+
+// ── CHART HELPERS ────────────────────────────────────────
+Chart.defaults.color = '#8892A4';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+
+function destroyChart(id){ if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];} }
+
+function mkLine(id, labels, datasets, opts) {
+  opts = opts || {};
+  destroyChart(id);
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  S.charts[id] = new Chart(ctx, {
+    type:'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: datasets.length > 1, labels: { boxWidth: 10, padding: 16, usePointStyle: true } },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          titleColor: '#F1F5F9',
+          bodyColor: '#8892A4',
+          padding: 12,
+          cornerRadius: 8,
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxTicksLimit: 9 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      },
+      interaction: { mode: 'index', intersect: false }
+    }
+  });
+}
+
+function mkBar(id, labels, datasets, stacked) {
+  stacked = stacked || false;
+  destroyChart(id);
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  var safeDatasets = [];
+  for (var i = 0; i < datasets.length; i++) {
+    var d = datasets[i];
+    var newD = {};
+    for (var key in d) {
+      newD[key] = d[key];
+    }
+    newD.borderRadius = 4;
+    safeDatasets.push(newD);
+  }
+  S.charts[id] = new Chart(ctx, {
+    type:'bar',
+    data: { labels: labels, datasets: safeDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: safeDatasets.length > 1, labels: { boxWidth: 10, padding: 16 } },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          titleColor: '#F1F5F9',
+          bodyColor: '#8892A4',
+          padding: 12,
+          cornerRadius: 8
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, stacked: stacked },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: stacked }
+      }
+    }
+  });
+}
+
+function mkDoughnut(id, labels, data, colors) {
+  destroyChart(id);
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  S.charts[id] = new Chart(ctx, {
+    type:'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#1C2333', hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, padding: 14, usePointStyle: true } },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          titleColor: '#F1F5F9',
+          bodyColor: '#8892A4',
+          padding: 12,
+          cornerRadius: 8
+        }
+      }
+    }
+  });
+}
+
+function mkScatter(id, data, opts) {
+  opts = opts || {};
+  destroyChart(id);
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  S.charts[id] = new Chart(ctx, {
+    type:'scatter',
+    data: { datasets: data },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          titleColor: '#F1F5F9',
+          bodyColor: '#8892A4',
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(d) {
+              return (d.raw.label || '') + ': pos ' + (d.raw.x ? d.raw.x.toFixed(1) : '') + ', CTR ' + (d.raw.y || 0).toFixed(1) + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: opts.xLabel || 'X', color: '#4B5568' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { title: { display: true, text: opts.yLabel || 'Y', color: '#4B5568' }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function mkRadar(id, labels, datasets) {
+  destroyChart(id);
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  S.charts[id] = new Chart(ctx, {
+    type:'radar',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { display: false },
+          pointLabels: { color: '#8892A4', font: { size: 11 } }
+        }
+      },
+      plugins: {
+        legend: { labels: { boxWidth: 10, padding: 16 } },
+        tooltip: {
+          backgroundColor: 'rgba(28,35,51,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          titleColor: '#F1F5F9',
+          bodyColor: '#8892A4',
+          padding: 12,
+          cornerRadius: 8
+        }
+      }
+    }
+  });
+}
+
+// ── AUTH ─────────────────────────────────────────────────
+var Auth = {
+  connect: function() {
+    document.getElementById('status-dot').className = 'status-indicator connecting';
+    document.getElementById('status-text').textContent = 'Authenticating…';
+    google.script.run
+      .withSuccessHandler(function(info) {
+        S.token = info.token;
+        S.tokenExp = Date.now() + 3500000;
+        Auth.onAuth(info.email);
+      })
+      .withFailureHandler(function(err) {
+        Toast.show('err', 'Auth Failed', err.message);
+        document.getElementById('status-text').textContent = 'Auth Error';
+      })
+      .getUserInfo();
+  },
+  onAuth: function(email) {
+    document.getElementById('status-dot').className = 'status-indicator live';
+    document.getElementById('status-text').textContent = email || 'Connected';
+    document.getElementById('chip-gsc').className = 'chip chip-emerald';
+    document.getElementById('chip-gsc').textContent = 'GSC: Ready';
+    document.getElementById('chip-ga4').className = 'chip chip-emerald';
+    document.getElementById('chip-ga4').textContent = 'GA4: Ready';
+    document.getElementById('btn-auth').innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+    document.getElementById('btn-auth').className = 'btn-auth signed-in';
+    document.getElementById('auth-overlay').style.display = 'none';
+    App.fetchAll();
+  },
+  signOut: function() { location.reload(); },
+  ok: function() { return !!S.token; }
+};
+
+// ── SERVER CALL WRAPPERS ──────────────────────────────
+function callServer(fn, params, success, failure) {
+  var runner = google.script.run
+    .withSuccessHandler(success)
+    .withFailureHandler(failure || function(err) { Toast.show('err', 'Server Error', err.message); });
+  if (params) runner[fn](params);
+  else runner[fn]();
+}
+
+// ── DATA HELPERS ─────────────────────────────────────────
+function gscTotals() {
+  var rows = (S.gscRows && S.gscRows.rows) || [];
+  var clicks = 0, imp = 0, posSum = 0;
+  for (var i = 0; i < rows.length; i++) {
+    clicks += rows[i].clicks;
+    imp += rows[i].impressions;
+    posSum += rows[i].position;
+  }
+  var pos = rows.length ? posSum / rows.length : 0;
+  return { clicks: clicks, impressions: imp, ctr: imp ? clicks/imp : 0, position: pos, count: rows.length };
+}
+function ga4Vals() {
+  if (!S.ga4Overview || !S.ga4Overview.rows || !S.ga4Overview.rows[0]) return null;
+  var v = S.ga4Overview.rows[0].metricValues;
+  return {
+    sessions: +v[0].value,
+    totalUsers: +v[1].value,
+    newUsers: +v[2].value,
+    engagementRate: +v[3].value,
+    avgDuration: +v[4].value,
+    pageViews: +v[5].value,
+    bounceRate: +v[6].value,
+    conversions: +v[7].value
+  };
+}
+function classifyIntent(rows) {
+  var cats = [
+    {label:'Question', test: function(q) { return /^(what|who|when|where|which)\s/i.test(q); } },
+    {label:'How-to',   test: function(q) { return /^how\s(to|do|can|does)\s/i.test(q); } },
+    {label:'Best / List', test: function(q) { return /\b(best|top|list|vs|compare)\b/i.test(q); } },
+    {label:'Navigational', test: function(q) { return q.split(' ').length<=2; } },
+    {label:'Definition', test: function(q) { return /\b(what is|define|meaning|definition)\b/i.test(q); } },
+    {label:'Other',    test: function() { return true; } }
+  ];
+  var result = [];
+  for (var i = 0; i < cats.length; i++) {
+    result.push({ label: cats[i].label, impressions: 0, clicks: 0, count: 0 });
+  }
+  for (var r = 0; r < rows.length; r++) {
+    var row = rows[r];
+    var q = row.keys[0];
+    for (var c = 0; c < cats.length; c++) {
+      if (cats[c].test(q)) {
+        result[c].impressions += row.impressions;
+        result[c].clicks += row.clicks;
+        result[c].count++;
+        break;
+      }
+    }
+  }
+  return result.filter(function(c) { return c.count > 0; });
+}
+function detectAIO(rows) {
+  var out = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var q = r.keys[0].toLowerCase();
+    if (/^(what|how|why|who|when|is|does|can|best|top|list)\b/.test(q) || q.split(' ').length >= 5 || q.indexOf('?') !== -1) {
+      out.push(r);
+    }
+  }
+  return out;
+}
+function detectOpps(rows) {
+  var out = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (r.position >= 4 && r.position <= 20 && r.impressions >= 100 && r.ctr < 0.05) {
+      var score = Math.round(((r.impressions/100) * 0.4) + ((20 - r.position) / 20 * 0.4) + ((0.05 - r.ctr) * 200 * 0.2));
+      out.push({ keys: r.keys, clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position, score: score });
+    }
+  }
+  out.sort(function(a,b) { return b.score - a.score; });
+  return out;
+}
+function detectCannibal(rows) {
+  var seen = {};
+  var out = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var stem = r.keys[0].toLowerCase().replace(/\b(a|an|the|for|in|to|of|and|or)\b/g,'').trim().split(' ').slice(0,3).join(' ');
+    if (seen[stem]) {
+      var p = seen[stem];
+      var delta = Math.abs(r.position - p.position);
+      if (delta < 15) out.push({ query: r.keys[0], stem: stem, pos1: p.position, pos2: r.position, delta: delta });
+    } else {
+      seen[stem] = r;
+    }
+  }
+  out.sort(function(a,b) { return a.delta - b.delta; });
+  return out.slice(0,40);
+}
+function snippetScore(r) {
+  return Math.min(100, Math.round((r.ctr * 800) + (r.position <= 3 ? 35 : r.position <= 10 ? 15 : 3) + (r.clicks / Math.max(1, r.impressions) * 50)));
+}
+function oppScore(r) {
+  return Math.round((r.impressions / 10) + (r.position > 10 ? 0 : (10 - r.position) * 8) + ((0.05 - Math.min(r.ctr, 0.05)) / 0.05 * 40));
+}
+
+// ── MAIN APP ─────────────────────────────────────────────
+var App = {
+  go: function(view) {
+    S.view = view;
+    S.tab = 0;
+    S.filterText = '';
+    this.clearDrill();
+    var items = document.querySelectorAll('.nav-item[data-view]');
+    for (var i = 0; i < items.length; i++) {
+      var b = items[i];
+      b.classList.toggle('active', b.dataset.view === view);
+    }
+    this.renderTabs();
+    this.renderContent();
+  },
+  renderTabs: function() {
+    var tabs = (VIEWS[S.view] && VIEWS[S.view].tabs) || [];
+    var html = '';
+    for (var i = 0; i < tabs.length; i++) {
+      var active = (i === S.tab) ? ' active' : '';
+      html += '<button class="tab' + active + '" data-i="' + i + '">' + tabs[i] + '</button>';
+    }
+    document.getElementById('tabbar').innerHTML = html;
+    var tabButtons = document.querySelectorAll('.tab');
+    for (var j = 0; j < tabButtons.length; j++) {
+      (function(btn) {
+        btn.onclick = function() {
+          S.tab = +btn.dataset.i;
+          var all = document.querySelectorAll('.tab');
+          for (var k = 0; k < all.length; k++) all[k].classList.remove('active');
+          btn.classList.add('active');
+          App.renderContent();
+        };
+      })(tabButtons[j]);
+    }
+  },
+  renderContent: function() {
+    var el = document.getElementById('content');
+    for (var id in S.charts) {
+      if (!document.getElementById(id)) {
+        destroyChart(id);
+      }
+    }
+    var noAuthViews = ['config','page_auditor','schema_gen','content_rewriter','prompt_tester','geo_checklist'];
+    var needsAuth = true;
+    for (var i = 0; i < noAuthViews.length; i++) {
+      if (noAuthViews[i] === S.view) { needsAuth = false; break; }
+    }
+    if (!Auth.ok() && needsAuth) {
+      el.innerHTML = '<div class="card"><div class="empty-state"><i class="fas fa-lock"></i><h4>No data yet</h4><p>Connect your Google account to load live Search Console and Analytics data.</p></div></div>';
+      return;
+    }
+    var v = S.view, t = S.tab;
+    if (v === 'dashboard') this.vDashboard(t,el);
+    else if (v === 'gsc') this.vGSC(t,el);
+    else if (v === 'ga4') this.vGA4(t,el);
+    else if (v === 'aeo') this.vAEO(t,el);
+    else if (v === 'opportunities') this.vOpps(t,el);
+    else if (v === 'competitors') this.vCompetitors(t,el);
+    else if (v === 'cannibalization') this.vCannibal(t,el);
+    else if (v === 'copilot') this.vCopilot(t,el);
+    else if (v === 'audit') this.vAudit(t,el);
+    else if (v === 'page_auditor') this.vPageAuditor(t,el);
+    else if (v === 'schema_gen') this.vSchemaGen(t,el);
+    else if (v === 'content_rewriter') this.vContentRewriter(t,el);
+    else if (v === 'prompt_tester') this.vPromptTester(t,el);
+    else if (v === 'geo_checklist') this.vGeoChecklist(t,el);
+    else if (v === 'config') this.vConfig(t,el);
+    this.animateKPIs();
+  },
+
+  // ── DASHBOARD ──────────────────────────────────────────
+  vDashboard: function(t,el) {
+    if (t === 0) {
+      var tot = gscTotals();
+      var ga4 = ga4Vals();
+      var geoScore = (S.engineMetrics && S.engineMetrics.geo) ? S.engineMetrics.geo + '%' : (S.geoScore ? S.geoScore + '%' : '–');
+      el.innerHTML =
+        '<div class="kpi-grid" id="kpi-strip"></div>' +
+        '<div class="card" id="ai-insight-card" style="margin-bottom:20px;display:none;">' +
+          '<div class="card-head"><div class="card-title"><i class="fas fa-brain"></i>Engine Intelligence</div><span class="badge badge-violet">Live Insight</span></div>' +
+          '<div class="card-body" id="ai-insight-text" style="font-size:14px;color:var(--accent-violet-light);font-weight:500;"></div>' +
+        '</div>' +
+        '<div class="g2">' +
+          '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>GSC — Clicks &amp; Impressions</div><span class="badge badge-emerald">Live</span></div><div class="chart-wrap" style="height:200px"><canvas id="ch-mini-gsc"></canvas></div></div>' +
+          '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-line"></i>GA4 — Sessions &amp; Users</div><span class="badge badge-emerald">Live</span></div><div class="chart-wrap" style="height:200px"><canvas id="ch-mini-ga4"></canvas></div></div>' +
+        '</div>';
+      var kpis = [
+        { label:'Clicks', val:F.n(tot.clicks), sub: S.dateRange+'d organic', accent:'#10B981', glyph:'↑' },
+        { label:'Impressions', val:F.n(tot.impressions), sub:'Search Console', accent:'#38BDF8', glyph:'◈' },
+        { label:'GEO Score', val: geoScore, sub:'AI Visibility', accent:'#F59E0B', glyph:'◈' },
+        { label:'AEO Score', val: (S.engineMetrics && S.engineMetrics.aeo) ? S.engineMetrics.aeo+'%' : '–', sub:'Engine Calculated', accent:'#7C6FF7', glyph:'#' },
+        { label:'Conversion Potential', val: (S.engineMetrics && S.engineMetrics.leads) ? S.engineMetrics.leads+'%' : '–', sub: S.dateRange+'d intent', accent:'#F43F5E', glyph:'⚡' }
+      ];
+      var stripHtml = '';
+      for (var i = 0; i < kpis.length; i++) {
+        var k = kpis[i];
+        stripHtml += '<div class="kpi" style="animation-delay:' + (i*0.06) + 's"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val">' + k.val + '</div><div class="kpi-sub">' + k.sub + '</div><div class="kpi-bg-glyph">' + k.glyph + '</div></div>';
+      }
+      document.getElementById('kpi-strip').innerHTML = stripHtml;
+      if (S.engineMetrics && S.engineMetrics.aiInsight) {
+        var ic = document.getElementById('ai-insight-card');
+        if (ic) { ic.style.display = 'block'; document.getElementById('ai-insight-text').textContent = S.engineMetrics.aiInsight; }
+      }
+      var self = this;
+      setTimeout(function() {
+        var ts = (S.gscTs && S.gscTs.rows) || [];
+        if (ts.length) {
+          var labels = ts.map(function(r) { return r.keys[0].slice(5); });
+          var datasets = [
+            { label:'Clicks', data:ts.map(function(r) { return r.clicks; }), borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.08)', fill:true, tension:0.35, pointRadius:0 },
+            { label:'Impr÷10', data:ts.map(function(r) { return Math.round(r.impressions/10); }), borderColor:'rgba(56,189,248,0.6)', fill:false, tension:0.35, pointRadius:0 }
+          ];
+          mkLine('ch-mini-gsc', labels, datasets);
+        }
+        var gts = (S.ga4Ts && S.ga4Ts.rows) || [];
+        if (gts.length) {
+          var labels2 = gts.map(function(r) { var d = r.dimensionValues[0].value; return d.slice(4,6)+'/'+d.slice(6); });
+          var datasets2 = [
+            { label:'Sessions', data:gts.map(function(r) { return +r.metricValues[0].value; }), borderColor:'#7C6FF7', backgroundColor:'rgba(124,111,247,0.08)', fill:true, tension:0.35, pointRadius:0 },
+            { label:'Users', data:gts.map(function(r) { return +r.metricValues[1].value; }), borderColor:'rgba(56,189,248,0.6)', fill:false, tension:0.35, pointRadius:0 }
+          ];
+          mkLine('ch-mini-ga4', labels2, datasets2);
+        }
+      }, 60);
+    } else if (t === 1) {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i>Organic Performance Trend</div></div><div class="chart-wrap tall" style="height:320px"><canvas id="ch-full-trend"></canvas></div></div>';
+      var self = this;
+      setTimeout(function() {
+        var ts = (S.gscTs && S.gscTs.rows) || [];
+        if (ts.length) {
+          var labels = ts.map(function(r) { return r.keys[0].slice(5); });
+          var datasets = [
+            { label:'Clicks', data:ts.map(function(r) { return r.clicks; }), borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.08)', fill:true, tension:0.35, pointRadius:0 },
+            { label:'Impressions', data:ts.map(function(r) { return r.impressions; }), borderColor:'rgba(56,189,248,0.7)', fill:false, tension:0.35, pointRadius:0 }
+          ];
+          mkLine('ch-full-trend', labels, datasets);
+        }
+      }, 60);
+    } else if (t === 2) {
+      el.innerHTML = this.qTable((S.gscRows && S.gscRows.rows) || [], 50);
+    } else if (t === 3) {
+      el.innerHTML = this.pgTable((S.gscPages && S.gscPages.rows) || [], 50);
+    }
+  },
+
+  // ── GSC ──────────────────────────────────────────────────
+  vGSC: function(t,el) {
+    if (t === 0) {
+      var rows = ((S.gscRows && S.gscRows.rows) || []).filter(function(r) {
+        return S.filterText ? r.keys[0].indexOf(S.filterText) !== -1 : true;
+      });
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-search"></i>Query Analytics</div><div class="card-actions"><div class="filter-input-wrap"><i class="fas fa-filter"></i><input class="filter-input" id="qfilter" placeholder="Filter queries…" value="' + S.filterText + '"></div><button class="btn btn-ghost btn-sm" id="btn-csv"><i class="fas fa-file-export"></i>Export CSV</button></div></div><div id="gsc-query-table-wrap">' + this.qTableInner(rows,150) + '</div></div>';
+      var self = this;
+      document.getElementById('qfilter').oninput = function(e) { S.filterText = e.target.value; self.renderContent(); };
+      document.getElementById('btn-csv').onclick = function() { self.exportGSCCSV(); };
+    } else if (t === 1) {
+      el.innerHTML =
+        '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-map-pin"></i>Position Distribution</div></div><div class="card-body" id="pos-dist-body"></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>Clicks by Position Band</div></div><div class="chart-wrap" style="height:200px"><canvas id="ch-pos-band"></canvas></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-scatter-chart"></i>Position vs CTR Scatter</div><span class="badge badge-sky">Hover for details</span></div><div class="chart-wrap tall" style="height:280px"><canvas id="ch-scatter"></canvas></div></div></div>';
+      var self = this;
+      setTimeout(function() { self.renderPosAnalysis(); }, 60);
+    } else if (t === 2) {
+      el.innerHTML =
+        '<div class="g2"><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-bullseye"></i>CTR vs Position — Opportunity Zones</div><span class="badge badge-amber">Red = high-imp, under-clicked</span></div><div class="chart-wrap tall" style="height:280px"><canvas id="ch-ctr-scatter"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>Avg CTR by Position Band</div></div><div class="chart-wrap" style="height:200px"><canvas id="ch-ctr-band"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-rocket"></i>CTR Uplift Opportunities</div><span class="badge badge-rose">Pos ≤10, CTR &lt;3%</span></div>' + this.ctrOpps() + '</div></div>';
+      var self = this;
+      setTimeout(function() { self.renderCTR(); }, 60);
+    } else {
+      el.innerHTML =
+        '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-mobile-alt"></i>Clicks by Device</div></div><div class="chart-wrap" style="height:220px"><canvas id="ch-dev-c"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-eye"></i>Impressions by Device</div></div><div class="chart-wrap" style="height:220px"><canvas id="ch-dev-i"></canvas></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-table"></i>Device Performance</div></div>' + this.deviceTable() + '</div></div>';
+      var self = this;
+      setTimeout(function() { self.renderDevices(); }, 60);
+    }
+  },
+
+  // ── GA4 ──────────────────────────────────────────────────
+  vGA4: function(t,el) {
+    var ga4 = ga4Vals();
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="kpi-grid" id="ga4-kpis"></div><div class="card gap-top"><div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i>Sessions &amp; Users — Daily</div></div><div class="chart-wrap tall" style="height:280px"><canvas id="ch-ga4-trend"></canvas></div></div>';
+      var k = ga4 ? [
+        {label:'Sessions',val:F.n(ga4.sessions),accent:'#7C6FF7'},
+        {label:'Total Users',val:F.n(ga4.totalUsers),accent:'#10B981'},
+        {label:'New Users',val:F.n(ga4.newUsers),accent:'#38BDF8'},
+        {label:'Engagement Rate',val:F.pct(ga4.engagementRate),accent:'#F59E0B'},
+        {label:'Avg Session',val:F.dur(ga4.avgDuration),accent:'#F43F5E'}
+      ] : [{label:'No GA4 data',val:'–',accent:'#4B5568'}];
+      var html = '';
+      for (var i = 0; i < k.length; i++) {
+        var x = k[i];
+        html += '<div class="kpi" style="animation-delay:' + (i*0.06) + 's"><div class="kpi-accent" style="background:' + x.accent + '"></div><div class="kpi-label">' + x.label + '</div><div class="kpi-val">' + x.val + '</div></div>';
+      }
+      document.getElementById('ga4-kpis').innerHTML = html;
+      var self = this;
+      setTimeout(function() {
+        var ts = (S.ga4Ts && S.ga4Ts.rows) || [];
+        if (ts.length) {
+          var labels = ts.map(function(r) { var d = r.dimensionValues[0].value; return d.slice(4,6)+'/'+d.slice(6); });
+          var datasets = [
+            { label:'Sessions', data:ts.map(function(r) { return +r.metricValues[0].value; }), borderColor:'#7C6FF7', backgroundColor:'rgba(124,111,247,0.08)', fill:true, tension:0.35, pointRadius:0 },
+            { label:'Users', data:ts.map(function(r) { return +r.metricValues[1].value; }), borderColor:'rgba(56,189,248,0.7)', fill:false, tension:0.35, pointRadius:0 }
+          ];
+          mkLine('ch-ga4-trend', labels, datasets);
+        }
+      }, 60);
+    } else if (t === 1) {
+      el.innerHTML =
+        '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i>Sessions by Channel</div></div><div class="chart-wrap" style="height:240px"><canvas id="ch-ch-donut"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>Channel Breakdown</div></div><div class="chart-wrap" style="height:240px"><canvas id="ch-ch-bar"></canvas></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-table"></i>Channel Performance</div></div>' + this.channelTable() + '</div></div>';
+      var self = this;
+      setTimeout(function() {
+        var rows = (S.ga4Channels && S.ga4Channels.rows) || [];
+        var labels = rows.map(function(r) { return r.dimensionValues[0].value; });
+        var sessions = rows.map(function(r) { return +r.metricValues[0].value; });
+        var colors = ['rgba(124,111,247,0.7)','rgba(16,185,129,0.7)','rgba(56,189,248,0.7)','rgba(245,158,11,0.7)','rgba(244,63,94,0.7)','rgba(139,92,246,0.7)'];
+        mkDoughnut('ch-ch-donut', labels, sessions, colors.slice(0, labels.length));
+        mkBar('ch-ch-bar', labels, [{label:'Sessions', data:sessions, backgroundColor:colors.slice(0, labels.length)}]);
+      }, 60);
+    } else if (t === 2) {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-file-alt"></i>Top Pages by Views</div><button class="btn btn-ghost btn-sm" id="btn-csv-pages"><i class="fas fa-file-export"></i>Export</button></div>' + this.ga4PagesTable() + '</div>';
+      var self = this;
+      document.getElementById('btn-csv-pages').addEventListener('click', function() { self.exportGA4CSV(); });
+    } else {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i>Sessions &amp; Users Trend</div></div><div class="chart-wrap tall" style="height:300px"><canvas id="ch-ga4-trend2"></canvas></div></div>';
+      var self = this;
+      setTimeout(function() {
+        var ts = (S.ga4Ts && S.ga4Ts.rows) || [];
+        if (ts.length) {
+          var labels = ts.map(function(r) { var d = r.dimensionValues[0].value; return d.slice(4,6)+'/'+d.slice(6); });
+          var datasets = [
+            { label:'Sessions', data:ts.map(function(r) { return +r.metricValues[0].value; }), borderColor:'#7C6FF7', backgroundColor:'rgba(124,111,247,0.08)', fill:true, tension:0.35, pointRadius:0 },
+            { label:'Users', data:ts.map(function(r) { return +r.metricValues[1].value; }), borderColor:'rgba(56,189,248,0.7)', fill:false, tension:0.35, pointRadius:0 }
+          ];
+          mkLine('ch-ga4-trend2', labels, datasets);
+        }
+      }, 60);
+    }
+  },
+
+  // ── AEO ──────────────────────────────────────────────────
+  vAEO: function(t,el) {
+    var rows = (S.gscRows && S.gscRows.rows) || [];
+    if (t === 0) {
+      var aio = detectAIO(rows);
+      var totalImp = 0, aioImp = 0;
+      for (var i = 0; i < rows.length; i++) totalImp += rows[i].impressions;
+      for (var j = 0; j < aio.length; j++) aioImp += aio[j].impressions;
+      var rate = totalImp ? aioImp / totalImp : 0;
+      el.innerHTML =
+        '<div class="kpi-grid" id="aeo-kpis"></div><div class="g2 gap-top"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>AI Trigger Likelihood by Type</div></div><div class="chart-wrap" style="height:220px"><canvas id="ch-aio-bar"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i>Query Intent Distribution</div></div><div class="chart-wrap" style="height:220px"><canvas id="ch-intent-donut"></canvas></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-robot"></i>Likely AI Overview Queries</div><span class="badge badge-sky">' + aio.length + ' detected</span></div>' + this.aioTable(aio.slice(0,80)) + '</div></div>';
+      var kpis = [
+        {label:'AIO TRIGGER RATE',val:F.pct(rate),accent:'#7C6FF7'},
+        {label:'AIO-LIKELY QUERIES',val:F.n(aio.length),accent:'#38BDF8'},
+        {label:'AIO IMPRESSIONS',val:F.n(aioImp),accent:'#F59E0B'},
+        {label:'NON-AIO QUERIES',val:F.n(rows.length-aio.length),accent:'#10B981'},
+        {label:'TOTAL QUERIES',val:F.n(rows.length),accent:'#8892A4'}
+      ];
+      var html = '';
+      for (var i = 0; i < kpis.length; i++) {
+        var k = kpis[i];
+        html += '<div class="kpi" style="animation-delay:' + (i*0.06) + 's"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val">' + k.val + '</div></div>';
+      }
+      document.getElementById('aeo-kpis').innerHTML = html;
+      var self = this;
+      setTimeout(function() {
+        var intents = classifyIntent(rows);
+        var labels = intents.map(function(i) { return i.label; });
+        var data = intents.map(function(i) { return i.impressions; });
+        var colors = ['rgba(124,111,247,0.7)','rgba(56,189,248,0.7)','rgba(245,158,11,0.7)','rgba(244,63,94,0.7)','rgba(16,185,129,0.7)','rgba(139,92,246,0.7)'];
+        mkBar('ch-aio-bar', labels, [{label:'Impressions', data:data, backgroundColor:colors.slice(0, labels.length)}]);
+        mkDoughnut('ch-intent-donut', labels, data, colors.slice(0, labels.length));
+      }, 60);
+    } else if (t === 1) {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-radar"></i>Intent Radar</div></div><div class="chart-wrap tall" style="height:320px"><canvas id="ch-radar"></canvas></div></div>';
+      var self = this;
+      setTimeout(function() {
+        var intents = classifyIntent(rows);
+        var labels = intents.map(function(i) { return i.label; });
+        var datasets = [
+          { label:'Impressions', data:intents.map(function(i) { return i.impressions; }), backgroundColor:'rgba(124,111,247,0.12)', borderColor:'rgba(124,111,247,0.8)', pointBackgroundColor:'#7C6FF7' },
+          { label:'Clicks', data:intents.map(function(i) { return i.clicks; }), backgroundColor:'rgba(56,189,248,0.12)', borderColor:'rgba(56,189,248,0.8)', pointBackgroundColor:'#38BDF8' }
+        ];
+        mkRadar('ch-radar', labels, datasets);
+      }, 60);
+    } else if (t === 2) {
+      var scored = rows.map(function(r) {
+        var q = r.keys[0].toLowerCase();
+        var isQuestion = /\b(how|what|why|when|who|which|where|can|does|is|are)\b/.test(q) || q.indexOf('?') !== -1;
+        var posScore = Math.max(0, (4 - r.position) / 3) * 40;
+        var ctrScore = Math.min(40, r.ctr * 200);
+        var questionBonus = isQuestion ? 20 : 0;
+        var total = Math.round(Math.min(100, posScore + ctrScore + questionBonus));
+        return { keys: r.keys, clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position, winChance: total, isQuestion: isQuestion };
+      });
+      var sorted = scored.sort(function(a,b) { return b.winChance - a.winChance; }).slice(0,50);
+      var tableHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-trophy"></i>Snippet &amp; AI Overview Opportunities</div><span class="badge badge-violet">Win Chance Score</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Pos</th><th>CTR</th><th>Question?</th><th>Win Chance</th><th>Action</th></tr></thead><tbody>';
+      for (var i = 0; i < sorted.length; i++) {
+        var r = sorted[i];
+        var q = r.keys[0];
+        var posCls = posClass(r.position);
+        var winColor = r.winChance > 70 ? '#10B981' : (r.winChance > 40 ? '#F59E0B' : '#4B5568');
+        tableHtml += '<tr><td class="td-mono">' + q + '</td><td class="' + posCls + '">' + F.pos(r.position) + '</td><td>' + F.pct(r.ctr) + '</td><td>' + (r.isQuestion ? '✅' : '—') + '</td><td><div style="display:flex;align-items:center;gap:8px"><div class="opp-bar-track" style="width:80px"><div class="opp-bar-fill" style="width:' + r.winChance + '%;background:' + winColor + '"></div></div><span style="font-family:var(--font-mono);font-size:12px">' + r.winChance + '%</span></div></td><td><button class="btn btn-ghost btn-sm" onclick="App.drill(\'' + q.replace(/'/g,"\\'") + '\')">Drill</button></td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = tableHtml;
+    } else if (t === 3) {
+      // GEO Signals
+      var longTail = 0, question = 0, highImpDeep = 0, zeroClick = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (r.keys[0].split(' ').length >= 5) longTail++;
+        if (/^(what|how|why|who|when|which)\b/i.test(r.keys[0])) question++;
+        if (r.impressions > 500 && r.position > 10) highImpDeep++;
+        if (r.position <= 3 && r.ctr < 0.01) zeroClick++;
+      }
+      var items = [
+        {l:'Long-tail (5+ words)', v:longTail, c:'indigo'},
+        {l:'Question queries', v:question, c:'purple'},
+        {l:'High imp, deep position', v:highImpDeep, c:'warn'},
+        {l:'Zero-click risk', v:zeroClick, c:'rose'}
+      ];
+      var igridHtml = '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-signal"></i>GEO Signals from GSC</div></div><div class="card-body"><div class="igrid">';
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        igridHtml += '<div class="iitem"><div class="ilbl">' + it.l + '</div><div class="ival" style="color:var(--accent-' + it.c + ')">' + F.n(it.v) + '</div><div class="isub">queries</div></div>';
+      }
+      igridHtml += '</div></div></div>';
+      var crawlerHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-robot"></i>AI Crawler Access Checklist</div><span class="badge badge-purple">robots.txt signals</span></div><div class="card-body">';
+      var crawlers = [
+        ['GPTBot (OpenAI)','Ensure User-agent: GPTBot is not disallowed','Most common AIO crawler'],
+        ['ClaudeBot (Anthropic)','User-agent: ClaudeBot — allow crawling for Claude AI visibility','Growing citation source'],
+        ['PerplexityBot','User-agent: PerplexityBot — required for Perplexity.ai citations','High conversion traffic'],
+        ['Google-Extended','Controls AI training data — separate from search indexing','Affects Gemini'],
+        ['Bingbot / Applebot','Standard bots that feed Copilot and Siri','Indirect AIO impact'],
+        ['LLM.txt file','Add /llm.txt to guide AI systems on content permissions','Emerging standard']
+      ];
+      for (var i = 0; i < crawlers.length; i++) {
+        var c = crawlers[i];
+        crawlerHtml += '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border-light);gap:12px"><div><div style="font-size:12px;font-weight:600">' + c[0] + '</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">' + c[1] + '</div></div><span class="badge badge-muted" style="white-space:nowrap">' + c[2] + '</span></div>';
+      }
+      crawlerHtml += '</div></div>';
+      var playbookHtml = '<div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-book"></i>GEO Optimization Playbook</div></div><div class="card-body">';
+      var playbook = [
+        ['Definition Blocks','Every key concept page should open with a 40–60 word direct answer immediately after the first H2. AI extractors read this first.','High'],
+        ['Answer-First Structure','Lead with the conclusion, then support it. Reverse the classic blog pyramid. AI cites the first clear, standalone answer it finds.','High'],
+        ['Structured Lists','Use &lt;ol&gt; and &lt;ul&gt; for how-to steps, comparisons, and feature lists. Tables for data. AI prefers structured formats over prose paragraphs.','High'],
+        ['FAQ Schema (FAQPage)','Implement JSON-LD FAQPage schema on all informational pages. Each Q&A pair becomes a direct citation candidate.','High'],
+        ['HowTo Schema','For process/tutorial content, HowTo schema with numbered steps dramatically increases AIO citation rate.','High'],
+        ['Entity Co-occurrence','Mention related entities (brands, people, places, concepts) naturally. AI systems use co-occurrence to validate topical authority.','Medium'],
+        ['Citation-worthy Sources','Link to primary research, gov data, peer-reviewed papers. AI systems evaluate your sources when deciding citation trustworthiness.','Medium'],
+        ['Content Freshness','AI Overviews favor recently updated content. Add last-updated dates, refresh statistics, and republish with new data quarterly.','Medium'],
+        ['E-E-A-T Signals','Author bios with credentials, About pages with company history, and bylines on all content pages strengthen trust signals.','Medium'],
+        ['Conversational H2s','Write H2 headings as questions ("How does X work?") or complete phrases AI can extract as answer titles.','Low']
+      ];
+      for (var i = 0; i < playbook.length; i++) {
+        var p = playbook[i];
+        var priClass = p[2] === 'High' ? 'badge-rose' : (p[2] === 'Medium' ? 'badge-amber' : 'badge-muted');
+        playbookHtml += '<div style="padding:10px 0;border-bottom:1px solid var(--border-light);display:flex;gap:12px;align-items:flex-start"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--accent-violet-light)">' + p[0] + '</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;line-height:1.7">' + p[1] + '</div></div><span class="badge ' + priClass + '" style="flex-shrink:0">' + p[2] + '</span></div>';
+      }
+      playbookHtml += '</div></div>';
+      el.innerHTML = igridHtml + crawlerHtml + playbookHtml;
+    } else {
+      // Zero-click risk
+      var zcr = rows.filter(function(r) { return r.position <= 10 && r.ctr < 0.02 && r.impressions > 200; }).sort(function(a,b) { return b.impressions - a.impressions; });
+      var highRisk = zcr.filter(function(r) { return r.position <= 3; });
+      var ring1 = this.scoreRing(zcr.length ? Math.round(100 - Math.min(100, zcr.length / Math.max(rows.length,1) * 300)) : 0, zcr.length < 10 ? 'ok' : (zcr.length < 30 ? 'warn' : 'err'), 'Click Capture');
+      var ring2 = this.scoreRing(highRisk.length ? Math.round(100 - Math.min(100, highRisk.length / Math.max(rows.length,1) * 500)) : 0, highRisk.length < 5 ? 'ok' : (highRisk.length < 15 ? 'warn' : 'err'), 'Pos 1-3 Safety');
+      var actionsHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-lightbulb"></i>Recovery Actions</div></div><div class="card-body">';
+      var actions = [
+        ['Add schema markup','FAQPage and HowTo schema increases brand visibility even in zero-click results'],
+        ['Optimize for brand mentions','Ensure your brand name appears in the AI-generated answer even without a click'],
+        ['Target comparison queries','Users still click for "A vs B" comparisons — high intent, more click-through'],
+        ['Build list/hub pages','Comprehensive list pages capture users who want deeper browsing beyond AIO answers'],
+        ['Improve meta descriptions','Compelling descriptions with a clear CTA can recover CTR vs AI Overview alternatives']
+      ];
+      for (var i = 0; i < actions.length; i++) {
+        actionsHtml += '<div style="padding:9px 0;border-bottom:1px solid var(--border-light)"><div style="font-size:12px;font-weight:600">' + actions[i][0] + '</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">' + actions[i][1] + '</div></div>';
+      }
+      actionsHtml += '</div></div>';
+      var tableHtml = '<div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-list"></i>At-Risk Queries</div><span class="badge badge-muted">Pos 1–10, CTR &lt;2%, Impressions &gt;200</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Position</th><th>Impressions</th><th>CTR</th><th>Lost Clicks Est.</th><th>Risk</th></tr></thead><tbody>';
+      for (var i = 0; i < zcr.slice(0,50).length; i++) {
+        var r = zcr[i];
+        var risk = r.position <= 3 ? 'High' : 'Medium';
+        var riskClass = r.position <= 3 ? 'badge-rose' : 'badge-amber';
+        tableHtml += '<tr><td class="td-mono">' + r.keys[0] + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td>' + F.n(r.impressions) + '</td><td style="color:var(--accent-rose)">' + F.pct(r.ctr) + '</td><td style="color:var(--accent-amber)">~' + F.n(Math.round(r.impressions * 0.05 - r.clicks)) + '</td><td><span class="badge ' + riskClass + '">' + risk + '</span></td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-exclamation-circle"></i>Zero-Click Risk Analysis</div><span class="badge badge-rose">' + zcr.length + ' at-risk queries</span></div><div class="card-body"><div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">' + ring1 + ring2 + '</div><div style="font-size:11px;color:var(--text-tertiary);line-height:1.7">Queries in positions 1–10 with CTR below 2% are strong zero-click signals — likely being answered directly by AI Overviews or featured snippets without a click. These represent lost traffic that AEO optimization can recover.</div></div></div>' + actionsHtml + tableHtml + '</div>';
+    }
+  },
+
+  // ── OPPORTUNITIES ──────────────────────────────────────
+  vOpps: function(t,el) {
+    var rows = (S.gscRows && S.gscRows.rows) || [];
+    if (t === 0) {
+      var opps = detectOpps(rows);
+      var oppCount = document.getElementById('nav-opp-count');
+      if (oppCount) { oppCount.textContent = opps.length; oppCount.style.display = opps.length ? '' : 'none'; }
+      var tableHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-bolt"></i>Quick Win Opportunities</div><span class="badge badge-amber">' + opps.length + ' found — pos 4–20, high impressions, low CTR</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Position</th><th>Impressions</th><th>CTR</th><th>Opp Score</th><th>Est. Gain</th><th>AIO Risk</th></tr></thead><tbody>';
+      if (opps.length) {
+        var maxScore = opps[0].score || 1;
+        for (var i = 0; i < Math.min(opps.length, 50); i++) {
+          var r = opps[i];
+          var bw = Math.round(r.score / maxScore * 100);
+          var aio = /^(what|how|why|best|top)\b/i.test(r.keys[0]);
+          var riskClass = aio ? 'badge-purple' : 'badge-muted';
+          var riskLabel = aio ? 'High' : 'Low';
+          tableHtml += '<tr><td class="td-mono">' + r.keys[0] + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td>' + F.n(r.impressions) + '</td><td style="color:var(--accent-amber)">' + F.pct(r.ctr) + '</td><td><div style="display:flex;align-items:center;gap:8px"><div class="opp-bar-track" style="width:80px"><div class="opp-bar-fill" style="width:' + bw + '%;background:var(--accent-amber)"></div></div><span style="font-weight:600;font-size:11px">' + r.score + '</span></div></td><td style="color:var(--accent-emerald)">+' + F.n(Math.round(r.impressions * 0.05 - r.clicks)) + '</td><td><span class="badge ' + riskClass + '">' + riskLabel + '</span></td></tr>';
+        }
+      } else {
+        tableHtml += '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-tertiary)">No opportunities found in current dataset.</td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = tableHtml;
+    } else if (t === 1) {
+      var targets = rows.filter(function(r) {
+        return r.position >= 4 && r.position <= 20 && r.impressions >= 200 && /^(what|how|why|best|top|list)\b/i.test(r.keys[0]);
+      }).sort(function(a,b) { return a.position - b.position; }).slice(0,40);
+      var tableHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-star"></i>Featured Snippet Targets</div><span class="badge badge-purple">Question/list/how-to in pos 4–20</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Position</th><th>Impressions</th><th>CTR</th><th>Type</th><th>Schema Needed</th><th>Recommendation</th></tr></thead><tbody>';
+      if (targets.length) {
+        for (var i = 0; i < targets.length; i++) {
+          var r = targets[i];
+          var q = r.keys[0].toLowerCase();
+          var type = /^how/.test(q) ? 'How-to' : (/^(what|why|who|when)/.test(q) ? 'Definition' : (/^(best|top|list)/.test(q) ? 'List' : 'Question'));
+          var schemaMap = {'How-to':'HowTo','Definition':'FAQPage','List':'ItemList','Question':'FAQPage'};
+          var recMap = {'How-to':'Add numbered steps with HowTo JSON-LD schema.','Definition':'Lead with a 40–60 word direct answer immediately after H1.','List':'Format as bulleted HTML list with ItemList schema.','Question':'Answer in first sentence; use FAQPage schema.'};
+          var schema = schemaMap[type] || 'FAQPage';
+          var rec = recMap[type] || 'Add appropriate schema.';
+          tableHtml += '<tr><td class="td-mono">' + r.keys[0] + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.pct(r.ctr) + '</td><td><span class="badge badge-purple">' + type + '</span></td><td><span class="badge badge-violet">' + schema + '</span></td><td style="font-size:11px;color:var(--text-tertiary);max-width:220px">' + rec + '</td></tr>';
+        }
+      } else {
+        tableHtml += '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-tertiary)">No featured snippet targets detected.</td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = tableHtml;
+    } else {
+      var gaps = rows.filter(function(r) { return r.position > 20 && r.impressions > 100; }).sort(function(a,b) { return b.impressions - a.impressions; }).slice(0,50);
+      var tableHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-arrow-up"></i>Ranking Gaps</div><span class="badge badge-rose">Position 20+ with significant impressions</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Priority</th></tr></thead><tbody>';
+      if (gaps.length) {
+        for (var i = 0; i < gaps.length; i++) {
+          var r = gaps[i];
+          var pri = r.impressions > 1000 ? 'High' : (r.impressions > 400 ? 'Medium' : 'Low');
+          var priClass = pri === 'High' ? 'badge-rose' : (pri === 'Medium' ? 'badge-amber' : 'badge-muted');
+          tableHtml += '<tr><td class="td-mono">' + r.keys[0] + '</td><td class="pos-b">' + F.pos(r.position) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.n(r.clicks) + '</td><td>' + F.pct(r.ctr) + '</td><td><span class="badge ' + priClass + '">' + pri + '</span></td></tr>';
+        }
+      } else {
+        tableHtml += '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-tertiary)">No ranking gaps identified.</td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = tableHtml;
+    }
+  },
+
+  // ── COMPETITORS ──────────────────────────────────────────
+  vCompetitors: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="g2"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-users"></i>Top Domain Competitors</div></div><div class="chart-wrap" style="height:240px"><canvas id="ch-comp-share"></canvas></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i>Market Visibility Share</div></div><div class="chart-wrap" style="height:240px"><canvas id="ch-comp-pie"></canvas></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-search"></i>Competitor Keyword Presence</div></div><div id="comp-table-output"><div class="empty-state"><i class="fas fa-chart-simple"></i><p>Click analyze to run competitor citation detection.</p><button class="btn btn-primary" id="btn-analyze-comp">Analyze Competitive Citation Rates</button></div></div></div></div>';
+      var self = this;
+      document.getElementById('btn-analyze-comp').addEventListener('click', function() {
+        var btn = document.getElementById('btn-analyze-comp');
+        btn.disabled = true;
+        btn.textContent = 'Analyzing…';
+        var rows = (S.gscRows && S.gscRows.rows) || [];
+        var queries = rows.slice(0,10).map(function(r) { return r.keys[0]; }).join(', ');
+        var prompt = 'Identify the top 5 organic competitors for these queries: ' + queries + '. Estimate their market visibility (0-100). Return ONLY JSON: {"competitors":[{"name":"...", "share":X}]}';
+        google.script.run
+          .withSuccessHandler(function(res) {
+            try {
+              var data = JSON.parse(res.replace(/```json|```/g,'').trim());
+              var labels = data.competitors.map(function(c) { return c.name; });
+              var shares = data.competitors.map(function(c) { return c.share; });
+              mkBar('ch-comp-share', labels, [{label:'Visibility Share', data:shares, backgroundColor:'#7C6FF7'}]);
+              mkDoughnut('ch-comp-pie', labels, shares, ['#7C6FF7','#38BDF8','#F59E0B','#F43F5E','#10B981']);
+              var html = '<div class="tbl-wrap"><table><thead><tr><th>Competitor Domain</th><th>Market Share</th><th>Presence</th></tr></thead><tbody>';
+              for (var i = 0; i < data.competitors.length; i++) {
+                var c = data.competitors[i];
+                html += '<tr><td class="td-mono">' + c.name + '</td><td>' + c.share + '%</td><td><span class="badge badge-sky">Detected</span></td></tr>';
+              }
+              html += '</tbody></table></div>';
+              document.getElementById('comp-table-output').innerHTML = html;
+              btn.disabled = false;
+              btn.textContent = 'Analyze Competitive Citation Rates';
+            } catch(e) {
+              Toast.show('err','Parse error',e.message);
+              btn.disabled = false;
+              btn.textContent = 'Analyze Competitive Citation Rates';
+            }
+          })
+          .withFailureHandler(function(err) {
+            Toast.show('err','Analysis failed',err.message);
+            btn.disabled = false;
+            btn.textContent = 'Analyze Competitive Citation Rates';
+          })
+          .dispatchGeminiQuery("You are a competitive intelligence analyst.", [{role:'user', parts:[{text:prompt}]}]);
+      });
+    } else {
+      el.innerHTML = '<div class="card"><div class="empty-state"><i class="fas fa-shield-alt"></i><h4>Competitive Citation Tracking</h4><p>This module requires the HGM Citation API. Once enabled, you can track which competitors are being cited by LLMs (Perplexity, Gemini, ChatGPT) for your target keywords.</p></div></div>';
+    }
+  },
+
+  // ── CANNIBALIZATION ────────────────────────────────────
+  vCannibal: function(t,el) {
+    var conflicts = detectCannibal((S.gscRows && S.gscRows.rows) || []);
+    if (t === 0) {
+      var badgeClass = conflicts.length ? 'badge-rose' : 'badge-emerald';
+      var tableHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-exclamation-triangle"></i>Keyword Conflicts</div><span class="badge ' + badgeClass + '">' + conflicts.length + ' detected</span></div><div class="tbl-wrap tall"><table><thead><tr><th>Query Stem</th><th>Conflict A</th><th>Pos A</th><th>Conflict B</th><th>Pos B</th><th>Position Gap</th><th>Risk</th></tr></thead><tbody>';
+      if (conflicts.length) {
+        for (var i = 0; i < conflicts.length; i++) {
+          var c = conflicts[i];
+          var riskClass = c.delta < 5 ? 'badge-rose' : (c.delta < 10 ? 'badge-amber' : 'badge-muted');
+          var riskLabel = c.delta < 5 ? 'High' : (c.delta < 10 ? 'Medium' : 'Low');
+          tableHtml += '<tr><td class="td-mono">' + c.stem + '</td><td class="td-dim" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + c.query + '</td><td class="' + posClass(c.pos1) + '">' + F.pos(c.pos1) + '</td><td class="td-dim" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + c.query + '</td><td class="' + posClass(c.pos2) + '">' + F.pos(c.pos2) + '</td><td style="font-family:var(--font-mono)">' + c.delta.toFixed(1) + '</td><td><span class="badge ' + riskClass + '">' + riskLabel + '</span></td></tr>';
+        }
+      } else {
+        tableHtml += '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-tertiary)">No conflicts detected in current dataset.</td></tr>';
+      }
+      tableHtml += '</tbody></table></div></div>';
+      el.innerHTML = tableHtml;
+    } else {
+      el.innerHTML = '<div class="card"><div class="empty-state"><i class="fas fa-sitemap"></i><h4>Keyword Overlap Map</h4><p>Visual keyword overlap requires a per-query × per-page dataset, which needs GSC drilldown API calls per query. Click any query in Search Console to drill down.</p></div></div>';
+    }
+  },
+
+  // ── COPILOT ─────────────────────────────────────────────
+  vCopilot: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="g3r"><div class="copilot-wrap"><div class="copilot-head"><div class="copilot-title"><div class="copilot-dot"></div>AI Copilot</div><span class="badge badge-violet">Gemini-powered</span></div><div class="copilot-msgs" id="copilot-msgs"></div><div class="copilot-input-row"><div id="copilot-quick-actions" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 8px 0;"></div><input class="copilot-input" id="copilot-input" placeholder="Ask about your SEO data… e.g. \'Which queries have the biggest CTR gap?\'"><button class="copilot-send" id="copilot-send"><i class="fas fa-paper-plane"></i></button></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-database"></i>Data Context</div></div><div class="card-body" style="font-size:12px;color:var(--text-tertiary);line-height:1.8"><div><strong style="color:var(--text-secondary)">GSC Queries:</strong> ' + ((S.gscRows && S.gscRows.rows) ? S.gscRows.rows.length : 0) + '</div><div><strong style="color:var(--text-secondary)">Pages indexed:</strong> ' + ((S.gscPages && S.gscPages.rows) ? S.gscPages.rows.length : 0) + '</div><div><strong style="color:var(--text-secondary)">Date range:</strong> ' + S.dateRange + ' days</div><div><strong style="color:var(--text-secondary)">Domain:</strong> ' + (CFG.GSC_SITE || '—') + '</div><div style="margin-top:12px;font-size:11px;color:var(--text-tertiary)">The AI Copilot has access to your current GSC data summary. Ask it to surface insights, flag anomalies, or suggest actions.</div></div></div></div>';
+      var ac = document.getElementById('copilot-quick-actions');
+      if (ac) {
+        var suggestions = ['Show top 5 CTR opportunities','What are my worst performing pages?','Suggest titles for my top queries','Summarize this data for an executive'];
+        for (var i = 0; i < suggestions.length; i++) {
+          var chip = document.createElement('button');
+          chip.className = 'chip chip-muted';
+          chip.style.cssText = 'font-size:10px;padding:4px 10px;cursor:pointer;border:1px solid var(--border-light);background:var(--bg-elevated);';
+          chip.textContent = suggestions[i];
+          (function(text) {
+            chip.onclick = function() { App.sendCopilot(text); };
+          })(suggestions[i]);
+          ac.appendChild(chip);
+        }
+      }
+      this.renderCopilotMsgs();
+      var self = this;
+      document.getElementById('copilot-send').onclick = function() { self.sendCopilot(); };
+      document.getElementById('copilot-input').onkeydown = function(e) { if (e.key === 'Enter') self.sendCopilot(); };
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-magic"></i>Auto-Insights</div><span class="badge badge-violet">Gemini-generated</span></div><div class="card-body"><button class="btn btn-primary" id="btn-autogenerate" style="margin-bottom:16px">Generate Insights Report</button><div id="auto-insights-output" style="font-size:13px;color:var(--text-secondary);line-height:1.8"></div></div></div>';
+      document.getElementById('btn-autogenerate').onclick = function() { App.generateAutoInsights(); };
+    }
+  },
+
+  // ── SITE AUDIT ──────────────────────────────────────────
+  vAudit: function(t,el) {
+    if (!S.auditData) {
+      this.fetchAuditData(function() { App.vAudit(t, el); });
+      el.innerHTML = '<div class="card"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Running full site audit…</p></div></div>';
+      return;
+    }
+    var tabMap = {
+      0: this.renderAuditOverview,
+      1: this.renderTechnicalSEO,
+      2: this.renderCoreWebVitals,
+      3: this.renderAccessibility,
+      4: this.renderSecurity,
+      5: this.renderMobileUsability,
+      6: this.renderPerformanceDetail,
+      7: this.renderContentQuality,
+      8: this.renderLinksCrawlability
+    };
+    if (tabMap[t]) {
+      tabMap[t].call(this, el);
+    } else {
+      el.innerHTML = '<div class="card"><div class="empty-state"><p>Tab not implemented.</p></div></div>';
+    }
+  },
+
+  // ── PAGE AUDITOR ──────────────────────────────────────
+  vPageAuditor: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="g3r"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-file-alt"></i>AEO / GEO Page Audit</div></div><div class="card-body"><div class="config-row"><label class="config-label">Page URL to audit</label><input class="config-input" id="audit-url" placeholder="https://example.com/your-page" value="' + (S.auditCache._lastUrl || '') + '"></div><div class="config-row"><label class="config-label">Target keyword / topic <span style="color:var(--text-tertiary)">(optional)</span></label><input class="config-input" id="audit-kw" placeholder="e.g. digital marketing agency Los Angeles"></div><div class="config-row"><label class="config-label">Page content <span style="color:var(--text-tertiary)">(paste HTML or text)</span></label><textarea class="config-input" id="audit-content" placeholder="Paste your page content here for deeper analysis…" style="min-height:140px;resize:vertical;"></textarea></div><button class="btn btn-primary" id="btn-run-audit" style="width:100%;justify-content:center"><i class="fas fa-rocket"></i> Run AEO / GEO Audit</button></div></div><div class="card span2" id="audit-results"><div class="empty-state"><i class="fas fa-file-alt"></i><h4>Run an audit</h4><p>Enter a URL and optional keyword above. Claude will analyze the page against 20+ AEO/GEO criteria and return a scored report with prioritized fixes.</p></div></div></div>';
+      var self = this;
+      document.getElementById('btn-run-audit').addEventListener('click', function() { self._runPageAudit(); });
+    } else {
+      var hist = Object.keys(S.auditCache).filter(function(k) { return k !== '_lastUrl'; });
+      var histHtml = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-history"></i>Audit History</div><span class="badge badge-muted">' + hist.length + ' audits</span></div>';
+      if (hist.length) {
+        histHtml += '<div class="tbl-wrap tall"><table><thead><tr><th>URL</th><th>Score</th><th>Date</th><th></th></tr></thead><tbody>';
+        for (var i = 0; i < hist.length; i++) {
+          var url = hist[i];
+          var data = S.auditCache[url];
+          histHtml += '<tr><td class="td-url">' + url + '</td><td style="font-weight:700;color:var(--accent-emerald)">' + data.score + '/100</td><td style="color:var(--text-tertiary)">' + data.date + '</td><td><button class="btn btn-ghost btn-sm" onclick="App._showAuditResult(\'' + url + '\')">View →</button></td></tr>';
+        }
+        histHtml += '</tbody></table></div>';
+      } else {
+        histHtml += '<div class="empty-state"><i class="fas fa-history"></i><h4>No audit history</h4><p>Run your first audit on the previous tab.</p></div>';
+      }
+      histHtml += '</div>';
+      el.innerHTML = histHtml;
+    }
+  },
+
+  // ── SCHEMA GENERATOR ──────────────────────────────────
+  vSchemaGen: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="g3r"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-code"></i>Schema Generator</div></div><div class="card-body"><div class="config-row"><label class="config-label">Schema Type</label><select class="config-select" id="schema-type"><option value="FAQPage">FAQPage — for Q&A sections</option><option value="HowTo">HowTo — for step-by-step guides</option><option value="Article">Article / BlogPosting</option><option value="Organization">Organization — company info</option><option value="BreadcrumbList">BreadcrumbList — navigation</option><option value="Product">Product — product pages</option><option value="LocalBusiness">LocalBusiness — local SEO</option><option value="Service">Service — service pages</option></select></div><div class="config-row"><label class="config-label">Page URL</label><input class="config-input" id="schema-url" placeholder="https://example.com/page"></div><div class="config-row"><label class="config-label">Topic / Content description</label><textarea class="config-input" id="schema-topic" placeholder="Describe what this page is about. E.g.: A how-to guide explaining 5 steps to optimize content for AI Overviews. Include the steps or Q&As you want in the schema." style="min-height:120px;resize:vertical;"></textarea></div><button class="btn btn-primary" id="btn-gen-schema" style="width:100%;justify-content:center"><i class="fas fa-code"></i> Generate Schema JSON-LD</button></div></div><div class="card span2"><div class="card-head"><div class="card-title"><i class="fas fa-file-code"></i>Generated Schema</div><button class="btn btn-ghost btn-sm" id="btn-copy-schema" style="display:none"><i class="fas fa-copy"></i> Copy JSON-LD</button></div><div class="card-body" id="schema-output"><div class="empty-state"><i class="fas fa-code"></i><h4>Schema will appear here</h4><p>Select a type, describe your content, and click Generate.</p></div></div></div></div>';
+      var self = this;
+      document.getElementById('btn-gen-schema').addEventListener('click', function() { self._generateSchema(); });
+    } else {
+      var templates = [
+        {name:'FAQPage', desc:'For pages with Q&A sections. Highest AIO citation rate of any schema type.', badge:'badge-rose', schema:'{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is [your question]?","acceptedAnswer":{"@type":"Answer","text":"Your concise 40-60 word answer here."}}]}'},
+        {name:'HowTo', desc:'For step-by-step guides. Increases AIO citation for process queries.', badge:'badge-amber', schema:'{"@context":"https://schema.org","@type":"HowTo","name":"How to [task]","description":"A guide to [task description]","step":[{"@type":"HowToStep","name":"Step 1 name","text":"Detailed description of this step."}]}'},
+        {name:'Article', desc:'For blog posts and editorial content. Validates E-E-A-T signals.', badge:'badge-violet', schema:'{"@context":"https://schema.org","@type":"Article","headline":"Your article title","author":{"@type":"Person","name":"Author Name"},"publisher":{"@type":"Organization","name":"Company Name"},"datePublished":"2025-01-01","dateModified":"2025-06-01"}'},
+        {name:'Organization', desc:'Site-wide trust signal. Used by AI to validate brand entity.', badge:'badge-emerald', schema:'{"@context":"https://schema.org","@type":"Organization","name":"Company Name","url":"https://example.com","logo":"https://example.com/logo.png","sameAs":["https://linkedin.com/company/..."]}'}
+      ];
+      var html = '<div class="g2">';
+      for (var i = 0; i < templates.length; i++) {
+        var tpl = templates[i];
+        html += '<div class="card"><div class="card-head"><div class="card-title">' + tpl.name + '</div><span class="badge ' + tpl.badge + '">Template</span></div><div class="card-body"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">' + tpl.desc + '</div><div class="schema-out">' + tpl.schema + '</div><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);Toast.show(\'ok\',\'Copied\',\'Schema copied to clipboard.\')" style="margin-top:8px"><i class="fas fa-copy"></i> Copy</button></div></div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+  },
+
+  // ── CONTENT REWRITER ──────────────────────────────────
+  vContentRewriter: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-pen-fancy"></i>Rewrite for AI Citation</div><button class="btn btn-ghost btn-sm" id="btn-load-example">Load example</button></div><div class="card-body"><div class="config-row"><label class="config-label">Target keyword / query this content should answer</label><input class="config-input" id="rw-kw" placeholder="e.g. how to optimize content for AI Overviews"></div><div class="config-row"><label class="config-label">Optimization focus</label><select class="config-select" id="rw-focus"><option value="aio">AI Overview citation (Google)</option><option value="featured">Featured snippet capture</option><option value="perplexity">Perplexity / ChatGPT citation</option><option value="faq">FAQ / Q&A structure</option><option value="howto">HowTo / step-by-step</option></select></div><div class="rewrite-pane"><div><div class="pane-label">Original content</div><textarea class="config-input" id="rw-original" placeholder="Paste your existing content here…" style="height:280px;resize:vertical;"></textarea></div><div><div class="pane-label">AI-optimized rewrite</div><div class="pane-body" id="rw-output"><div style="color:var(--text-tertiary);font-size:12px">Rewritten content will appear here…</div></div></div></div><div style="display:flex;gap:10px;margin-top:12px"><button class="btn btn-primary" id="btn-rewrite" style="flex:1;justify-content:center"><i class="fas fa-pen-fancy"></i> Rewrite for AI Citation</button><button class="btn btn-ghost" id="btn-copy-rw" style="display:none"><i class="fas fa-copy"></i> Copy</button></div></div></div>';
+      var self = this;
+      document.getElementById('btn-load-example').addEventListener('click', function() {
+        document.getElementById('rw-original').value = 'Digital marketing has become increasingly important for businesses in the modern era. Companies that want to succeed need to have a strong online presence. There are many different aspects of digital marketing including SEO, social media, email marketing, and content marketing. Each of these channels can help businesses reach their target audience and grow their customer base. It is important to have a well-rounded digital marketing strategy that incorporates multiple channels. Working with an experienced digital marketing agency can help businesses develop and implement an effective strategy.';
+        document.getElementById('rw-kw').value = 'what does a digital marketing agency do';
+      });
+      document.getElementById('btn-rewrite').addEventListener('click', function() { self._runRewrite(); });
+    } else {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-layer-group"></i>Batch Analyzer</div><span class="badge badge-muted">Analyze multiple URLs at once</span></div><div class="card-body"><div class="config-row"><label class="config-label">URLs to analyze (one per line)</label><textarea class="config-input" id="batch-urls" placeholder="https://example.com/page-1&#10;https://example.com/page-2&#10;https://example.com/page-3" style="min-height:120px;resize:vertical;"></textarea></div><div class="config-row"><label class="config-label">Analysis type</label><select class="config-select" id="batch-type"><option value="aeo-readiness">AEO Readiness (fast scan)</option><option value="definition-blocks">Definition block gaps</option><option value="schema-gaps">Schema markup gaps</option><option value="intent-match">Intent match scoring</option></select></div><button class="btn btn-primary" id="btn-batch" style="width:100%;justify-content:center"><i class="fas fa-layer-group"></i> Analyze Batch</button><div id="batch-results" style="margin-top:14px"></div></div></div>';
+      var self = this;
+      document.getElementById('btn-batch').addEventListener('click', function() { self._runBatch(); });
+    }
+  },
+
+  // ── PROMPT TESTER ──────────────────────────────────────
+  vPromptTester: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="g3r"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-comment-dots"></i>Brand Visibility Tester</div></div><div class="card-body"><div class="config-row"><label class="config-label">Brand / Company name</label><input class="config-input" id="pt-brand" placeholder="e.g. Holistic Growth Marketing"></div><div class="config-row"><label class="config-label">Industry / niche</label><input class="config-input" id="pt-industry" placeholder="e.g. digital marketing agency, SEO services"></div><div class="config-row"><label class="config-label">Test prompts <span style="color:var(--text-tertiary)">(one per line)</span></label><textarea class="config-input" id="pt-prompts" placeholder="What are the best digital marketing agencies in Los Angeles?&#10;Who should I hire for SEO services?&#10;How do I choose a marketing agency?&#10;What is answer engine optimization?" style="min-height:120px;resize:vertical;"></textarea></div><button class="btn btn-primary" id="btn-pt-run" style="width:100%;justify-content:center"><i class="fas fa-comment-dots"></i> Test Brand Visibility</button></div></div><div class="card span2" id="pt-results"><div class="empty-state"><i class="fas fa-comment-dots"></i><h4>Results will appear here</h4><p>Enter your brand, industry, and test prompts. Claude will simulate how AI answer engines respond and score your brand citation likelihood.</p></div></div></div>';
+      var self = this;
+      document.getElementById('btn-pt-run').addEventListener('click', function() { self._runPromptTest(); });
+    } else {
+      var banks = {
+        'Discovery': ['What is the best [your service]?','Who are the leading [your industry] companies?','I need help with [your service], who should I contact?','[Your service] near me','Top [your industry] agencies'],
+        'Comparison': ['[Your company] vs [competitor]?','What makes a good [your service] provider?','How to choose a [your service] agency','[Your service] agency pricing','What should I look for in a [your service] partner?'],
+        'Decision': ['Is [your company] reputable?','[Your company] reviews','Should I hire [your company] for [service]?','[Your company] case studies','What results does [your company] get?'],
+        'Educational': ['What is [your service]?','How does [your process] work?','Why is [your service] important?','What are the benefits of [your service]?','How long does [your service] take?']
+      };
+      var html = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-book"></i>Prompt Bank</div><span class="badge badge-muted">Templates by funnel stage</span></div><div class="card-body"><div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px;line-height:1.7">Use these prompt templates to build your brand visibility testing bank. Replace bracketed placeholders with your specifics. Run 4–6 prompts per funnel stage monthly to track visibility trends.</div>';
+      for (var stage in banks) {
+        var prompts = banks[stage];
+        html += '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:700;color:var(--text-tertiary);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">' + stage + '</div>';
+        for (var i = 0; i < prompts.length; i++) {
+          var p = prompts[i];
+          var escaped = p.replace(/'/g,"\\'");
+          html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-light)"><div style="font-size:12px;color:var(--text-secondary);flex:1">' + p + '</div><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\'' + escaped + '\');Toast.show(\'ok\',\'Copied\',\'Prompt copied.\')">Copy</button></div>';
+        }
+        html += '</div>';
+      }
+      html += '</div></div>';
+      el.innerHTML = html;
+    }
+  },
+
+  // ── GEO CHECKLIST ──────────────────────────────────────
+  vGeoChecklist: function(t,el) {
+    var ALL_CHECKS = {
+      technical: [
+        {id:'t1', title:'GPTBot allowed in robots.txt', sub:'Add "User-agent: GPTBot / Allow: /" to robots.txt. Blocking it removes you from ChatGPT citations.', impact:'High'},
+        {id:'t2', title:'ClaudeBot allowed in robots.txt', sub:'User-agent: ClaudeBot. Anthropic crawls for Claude AI visibility.', impact:'High'},
+        {id:'t3', title:'PerplexityBot allowed in robots.txt', sub:'User-agent: PerplexityBot. Required for Perplexity.ai citations.', impact:'High'},
+        {id:'t4', title:'Google-Extended status reviewed', sub:'User-agent: Google-Extended controls AI training data. Decide your policy intentionally.', impact:'Medium'},
+        {id:'t5', title:'LLM.txt file created', sub:'Create /llm.txt to guide AI systems on content permissions and preferred citation format.', impact:'Medium'},
+        {id:'t6', title:'XML sitemap includes all key pages', sub:'Ensure your sitemap is current and submitted to GSC — AI systems follow crawl signals.', impact:'Medium'},
+        {id:'t7', title:'Page speed under 2.5s (LCP)', sub:'AI crawlers de-prioritize slow pages. Optimize Core Web Vitals.', impact:'Medium'},
+        {id:'t8', title:'HTTPS on all pages', sub:'Non-HTTPS pages are deprioritized by all major AI crawlers.', impact:'High'},
+        {id:'t9', title:'Canonical URLs set correctly', sub:'Prevent duplicate content issues that confuse AI crawlers about authoritative version.', impact:'Medium'},
+        {id:'t10', title:'Structured data validates in Rich Results Test', sub:'Test at search.google.com/test/rich-results. Fix any errors before publishing.', impact:'High'}
+      ],
+      content: [
+        {id:'c1', title:'Definition blocks on all key pages', sub:'40–60 word direct answer paragraph immediately after the first H2 on every informational page.', impact:'High'},
+        {id:'c2', title:'Answer-first structure', sub:'Lead with the conclusion. State the answer in the first 50 words, then elaborate with supporting detail.', impact:'High'},
+        {id:'c3', title:'H2s written as complete questions', sub:'"How does X work?" not just "How X works". Question H2s match how users query AI engines.', impact:'High'},
+        {id:'c4', title:'FAQ section on key pages', sub:'At minimum 5 Q&A pairs per page. Each answer self-contained at 40–100 words.', impact:'High'},
+        {id:'c5', title:'Ordered/unordered lists for enumerable content', sub:'Never use prose paragraphs for items that are naturally a list. AI extracts lists directly.', impact:'High'},
+        {id:'c6', title:'Tables for comparison content', sub:'Any "A vs B" or feature comparison should use an HTML table with proper headers.', impact:'Medium'},
+        {id:'c7', title:'Content freshness signals', sub:'Add "Last updated: [date]" to all important pages. Refresh statistics and examples quarterly.', impact:'High'},
+        {id:'c8', title:'Word count adequate for topic depth', sub:'Thin content (under 500 words) is rarely cited by AI. Aim for comprehensive coverage of the topic.', impact:'Medium'},
+        {id:'c9', title:'No AI-generated content without human review', sub:'AI-generated content detected as such is penalized for E-E-A-T. Always add human expertise and examples.', impact:'Medium'},
+        {id:'c10', title:'Internal links to supporting content', sub:'Link to related pages that add depth. AI systems follow link signals to assess topic authority.', impact:'Low'}
+      ],
+      entity: [
+        {id:'e1', title:'Author bios with credentials on all articles', sub:'Name, title, years of experience, relevant certifications. E-E-A-T requires demonstrated expertise.', impact:'High'},
+        {id:'e2', title:'About page with company history and team', sub:'AI uses your About page as a primary trust signal. Include founding date, team bios, and mission.', impact:'High'},
+        {id:'e3', title:'Consistent NAP (Name, Address, Phone)', sub:'Name, Address, Phone must be identical across your site, Google Business Profile, and all directories.', impact:'High'},
+        {id:'e4', title:'Wikipedia or Wikidata entity presence', sub:'Having a Wikipedia page or Wikidata entry dramatically increases AI citation likelihood.', impact:'High'},
+        {id:'e5', title:'Brand mentioned on authoritative third-party sites', sub:'Mentions in industry publications, news sites, and .edu/.gov domains strengthen entity authority.', impact:'High'},
+        {id:'e6', title:'Social profiles linked from website', sub:'LinkedIn, Twitter/X, YouTube, and relevant platforms. Verify all accounts where possible.', impact:'Medium'},
+        {id:'e7', title:'Citation-worthy sources linked on key pages', sub:'Link to government data, peer-reviewed research, or authoritative industry sources.', impact:'Medium'},
+        {id:'e8', title:'Entity co-occurrence present', sub:'Naturally mention related entities (industry terms, partner brands, locations) in your content.', impact:'Medium'},
+        {id:'e9', title:'Google Business Profile optimized', sub:'Complete, verified GBP with regular posts, Q&A responses, and high review velocity.', impact:'High'},
+        {id:'e10', title:'Press/media coverage documented', sub:'Create a Press page or media kit. AI systems cite brands with documented media presence.', impact:'Medium'}
+      ]
+    };
+    var allFlat = ALL_CHECKS.technical.concat(ALL_CHECKS.content).concat(ALL_CHECKS.entity);
+    var done = allFlat.filter(function(c) { return S.geoChecklist[c.id]; }).length;
+    var pct = Math.round(done / allFlat.length * 100);
+
+    function renderChecks(checks) {
+      var html = '';
+      for (var i = 0; i < checks.length; i++) {
+        var c = checks[i];
+        var checked = S.geoChecklist[c.id] ? 'done' : '';
+        var impactClass = c.impact === 'High' ? 'badge-rose' : (c.impact === 'Medium' ? 'badge-amber' : 'badge-muted');
+        html += '<div class="checklist-item">' +
+          '<div class="ci-check ' + checked + '" id="ci-' + c.id + '" onclick="App._toggleCheck(\'' + c.id + '\')"><i class="fas fa-check"></i></div>' +
+          '<div class="ci-body"><div class="ci-title ' + checked + '">' + c.title + '</div>' +
+          '<div class="ci-sub">' + c.sub + '</div></div>' +
+          '<span class="badge ' + impactClass + ' ci-tag">' + c.impact + '</span>' +
+          '</div>';
+      }
+      return html;
+    }
+
+    var technicalDone = ALL_CHECKS.technical.filter(function(c) { return S.geoChecklist[c.id]; }).length;
+    var contentDone = ALL_CHECKS.content.filter(function(c) { return S.geoChecklist[c.id]; }).length;
+    var entityDone = ALL_CHECKS.entity.filter(function(c) { return S.geoChecklist[c.id]; }).length;
+
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-check-double"></i>Full GEO / AEO Checklist</div><div class="card-actions"><span class="badge badge-violet">' + done + '/' + allFlat.length + ' complete</span><button class="btn btn-ghost btn-sm" onclick="App._resetChecklist()">Reset</button></div></div><div class="card-body"><div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-bottom:6px"><span>Overall Progress</span><span>' + pct + '%</span></div><div class="progbar"><div class="progfill" style="width:' + pct + '%;background:' + (pct >= 80 ? 'var(--accent-emerald)' : pct >= 50 ? 'var(--accent-amber)' : 'var(--accent-rose)') + '"></div></div></div><div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+        '<div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px 14px"><div style="font-size:16px;font-weight:700;color:#38BDF8">' + technicalDone + '/' + ALL_CHECKS.technical.length + '</div><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Technical</div></div>' +
+        '<div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px 14px"><div style="font-size:16px;font-weight:700;color:#10B981">' + contentDone + '/' + ALL_CHECKS.content.length + '</div><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Content</div></div>' +
+        '<div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px 14px"><div style="font-size:16px;font-weight:700;color:#A78BFA">' + entityDone + '/' + ALL_CHECKS.entity.length + '</div><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Entity & Auth</div></div>' +
+        '</div><div id="cl-all">' + renderChecks(allFlat) + '</div></div></div>';
+    } else if (t === 1) {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-code"></i>Technical Checks</div><span class="badge badge-sky">' + technicalDone + '/' + ALL_CHECKS.technical.length + '</span></div><div class="card-body" id="cl-tech">' + renderChecks(ALL_CHECKS.technical) + '</div></div>';
+    } else if (t === 2) {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-file-alt"></i>Content Checks</div><span class="badge badge-emerald">' + contentDone + '/' + ALL_CHECKS.content.length + '</span></div><div class="card-body" id="cl-content">' + renderChecks(ALL_CHECKS.content) + '</div></div>';
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-user-tie"></i>Entity &amp; Authority Checks</div><span class="badge badge-purple">' + entityDone + '/' + ALL_CHECKS.entity.length + '</span></div><div class="card-body" id="cl-entity">' + renderChecks(ALL_CHECKS.entity) + '</div></div>';
+    }
+  },
+
+  // ── CONFIG ──────────────────────────────────────────────
+  vConfig: function(t,el) {
+    if (t === 0) {
+      el.innerHTML =
+        '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-cog"></i>API Credentials</div><span class="badge badge-muted">Stored locally in your browser</span></div><div class="card-body"><div class="config-grid"><div class="config-row"><div class="config-label">GSC PROPERTY URL</div><input class="config-input" id="cfg-site" value="' + (localStorage.getItem('si_gsc_site') || '') + '" placeholder="https://example.com/"><div class="config-hint">Exact URL-prefix property.</div></div><div class="config-row"><div class="config-label">GA4 PROPERTY ID</div><input class="config-input" id="cfg-ga4" value="' + (localStorage.getItem('si_ga4_prop') || '') + '" placeholder="properties/123456789"><div class="config-hint">Format: properties/XXXXXXXXX.</div></div><div class="config-row"><div class="config-label">DEFAULT DATE RANGE</div><select class="config-select" id="cfg-dr"><option value="7" ' + (S.dateRange === 7 ? 'selected' : '') + '>7 days</option><option value="28" ' + (S.dateRange === 28 ? 'selected' : '') + '>28 days</option><option value="90" ' + (S.dateRange === 90 ? 'selected' : '') + '>90 days</option><option value="180" ' + (S.dateRange === 180 ? 'selected' : '') + '>180 days</option></select></div></div><div style="display:flex;gap:8px;margin-top:20px"><button class="btn btn-primary" id="btn-save-cfg">Save credentials</button><button class="btn btn-ghost" id="btn-test-cfg">Test connection</button></div></div></div>';
+      var self = this;
+      document.getElementById('btn-save-cfg').onclick = function() {
+        var site = document.getElementById('cfg-site').value.trim();
+        var ga4p = document.getElementById('cfg-ga4').value.trim();
+        var dr = document.getElementById('cfg-dr').value;
+        if (site) { localStorage.setItem('si_gsc_site', site); CFG.GSC_SITE = site; document.getElementById('sb-domain').textContent = site; }
+        if (ga4p) { localStorage.setItem('si_ga4_prop', ga4p); CFG.GA4_PROP = ga4p; }
+        S.dateRange = +dr;
+        Toast.show('ok','Saved','Credentials saved locally.');
+        document.getElementById('btn-auth').disabled = false;
+        // Sync to backend
+        google.script.run
+          .withSuccessHandler(function() { Toast.show('ok','Synced','Config saved to backend.'); })
+          .withFailureHandler(function(err) { Toast.show('warn','Backend sync failed',err.message); })
+          .updateWorkspaceConfig({
+            domain: site,
+            days: S.dateRange,
+            GA4_PROPERTY_ID: ga4p
+          });
+      };
+      document.getElementById('btn-test-cfg').onclick = function() {
+        if (!Auth.ok()) { Toast.show('warn','Not connected','Authenticate first.'); return; }
+        Toast.show('info','Testing','Running diagnostics…');
+        var site = document.getElementById('cfg-site').value.trim();
+        var ga4p = document.getElementById('cfg-ga4').value.trim();
+        google.script.run
+          .withSuccessHandler(function() {
+            App.fetchAll();
+          })
+          .withFailureHandler(function(err) {
+            Toast.show('err','Sync failed',err.message);
+          })
+          .updateWorkspaceConfig({
+            domain: site,
+            days: S.dateRange,
+            GA4_PROPERTY_ID: ga4p
+          });
+      };
+    } else if (t === 1) {
+      var steps = [
+        ['1','Go to <strong style="color:var(--text-primary)">console.cloud.google.com</strong> and create or select a project.'],
+        ['2','Enable these two APIs: <strong style="color:var(--accent-violet-light)">Google Search Console API</strong> and <strong style="color:var(--accent-violet-light)">Google Analytics Data API</strong>.'],
+        ['3','Go to APIs & Services → Credentials → Create → OAuth 2.0 Client ID → Web application.'],
+        ['4','Add <strong style="color:var(--accent-sky)">' + window.location.origin + '</strong> to Authorized JavaScript origins.'],
+        ['5','Copy the Client ID, enter it in the Credentials tab above, then click Connect Google in the top bar.']
+      ];
+      var stepHtml = '';
+      for (var i = 0; i < steps.length; i++) {
+        var s = steps[i];
+        stepHtml += '<div class="setup-step"><span class="step-num">' + s[0] + '</span><span>' + s[1] + '</span></div>';
+      }
+      el.innerHTML = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-book"></i>Setup Guide</div></div><div class="card-body"><div class="setup-box"><h4>HOW TO CONNECT IN 5 STEPS</h4><div id="setup-steps-list">' + stepHtml + '</div></div></div></div>';
+    } else {
+      this.renderConnections(el);
+    }
+  },
+
+  // ── CONFIG: CONNECTIONS TAB ──────────────────────────
+  renderConnections: function(el) {
+    el.innerHTML =
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-plug"></i>Integration Status</div></div><div class="card-body"><div id="connection-status-list" style="display:flex;flex-direction:column;gap:12px;"><div class="conn-item"><div style="display:flex;align-items:center;gap:12px;"><div style="font-weight:600;width:100px;">GSC</div><span class="badge ' + (Auth.ok() ? 'badge-emerald' : 'badge-muted') + '" id="gsc-status">' + (Auth.ok() ? 'Connected' : 'Not checked') + '</span><button class="btn btn-ghost btn-sm" onclick="App.testGSC()">Test</button></div><div id="gsc-detail" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">' + (CFG.GSC_SITE || 'No domain configured') + '</div></div><div class="conn-item"><div style="display:flex;align-items:center;gap:12px;"><div style="font-weight:600;width:100px;">GA4</div><span class="badge ' + (Auth.ok() ? 'badge-emerald' : 'badge-muted') + '" id="ga4-status">' + (Auth.ok() ? 'Connected' : 'Not checked') + '</span><button class="btn btn-ghost btn-sm" onclick="App.testGA4()">Test</button></div><div id="ga4-detail" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">' + (CFG.GA4_PROP || 'No property configured') + '</div></div><div class="conn-item"><div style="display:flex;align-items:center;gap:12px;"><div style="font-weight:600;width:100px;">Gemini</div><span class="badge badge-muted" id="gemini-status">Available</span><button class="btn btn-ghost btn-sm" onclick="App.testGemini()">Test</button></div><div id="gemini-detail" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">Uses server-side Gemini API (configured in backend)</div></div></div></div></div>';
+  },
+
+  // ── CONNECTION TESTS ──────────────────────────────────
+  testGSC: function() {
+    if (!Auth.ok()) { Toast.show('warn','Not connected','Authenticate first.'); return; }
+    Toast.show('info','Testing GSC','Checking property access…');
+    google.script.run
+      .withSuccessHandler(function() { Toast.show('ok','GSC OK','Property accessible.'); })
+      .withFailureHandler(function(err) { Toast.show('err','GSC Error',err.message); })
+      .fetchGSCQueries();
+  },
+  testGA4: function() {
+    if (!Auth.ok()) { Toast.show('warn','Not connected','Authenticate first.'); return; }
+    Toast.show('info','Testing GA4','Checking property access…');
+    google.script.run
+      .withSuccessHandler(function() { Toast.show('ok','GA4 OK','Property accessible.'); })
+      .withFailureHandler(function(err) { Toast.show('err','GA4 Error',err.message); })
+      .fetchGA4Overview();
+  },
+  testGemini: function() {
+    Toast.show('info','Testing Gemini','Sending test request…');
+    google.script.run
+      .withSuccessHandler(function(r) { Toast.show('ok','Gemini OK', r.slice(0,80)); })
+      .withFailureHandler(function(err) { Toast.show('err','Gemini Error',err.message); })
+      .dispatchGeminiQuery("You are a test assistant.", [{role:'user', parts:[{text:'Say "Gemini is working!" in exactly one sentence.'}]}]);
+  },
+
+  // ── PAGE AUDITOR HELPERS ──────────────────────────────
+  _runPageAudit: function() {
+    var url = document.getElementById('audit-url').value.trim();
+    var kw = document.getElementById('audit-kw').value.trim();
+    var content = document.getElementById('audit-content').value.trim();
+    if (!url) { Toast.show('warn','URL required','Enter the page URL to audit.'); return; }
+    S.auditCache._lastUrl = url;
+    var res = document.getElementById('audit-results');
+    res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Analyzing page against 20+ AEO/GEO criteria…</p></div></div>';
+    var prompt = 'You are an expert AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) auditor.\n' +
+      'Audit the following page for AI citation readiness. Return ONLY a JSON object with this exact structure:\n' +
+      '{"score":<number 0-100>,"grade":"<A/B/C/D/F>","summary":"<2-sentence executive summary>","checks":[{"id":"<unique_id>","category":"<Technical|Content|Schema|Entity|E-E-A-T|Crawler Access>","title":"<check name>","status":"<pass|fail|warn|info>","description":"<what was found>","fix":"<specific actionable fix or null>","impact":"<High|Medium|Low>"}],"topFixes":["<fix 1>","<fix 2>","<fix 3>"]}\n' +
+      'Include ALL checks: Technical (meta title length 50-60 chars, meta description 120-160 chars, canonical, HTTPS, mobile viewport), Crawler Access (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, LLM.txt), Content (definition block, answer-first, H1/H2 hierarchy, lists, FAQ, word count, freshness), Schema (JSON-LD, FAQPage, HowTo, Article, Organization), Entity & E-E-A-T (author bio, About page, citation sources, entity co-occurrence).\n' +
+      'URL: ' + url + ' Target keyword: ' + (kw || '(not specified)') + (content ? '\nCONTENT:\n' + content.slice(0,4000) : 'No content provided.') + '\n' +
+      'Return ONLY valid JSON. No markdown.';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(raw) {
+        try {
+          var data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+          data.date = new Date().toLocaleDateString();
+          S.auditCache[url] = data;
+          localStorage.setItem('si_auditcache', JSON.stringify(S.auditCache));
+          self._renderAuditResult(res, url, data);
+          Toast.show('ok','Audit complete','Score: ' + data.score + '/100');
+        } catch(e) {
+          Toast.show('err','Parse error', e.message);
+          res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Invalid response</h4><p>' + e.message + '</p></div></div>';
+        }
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Audit failed', e.message);
+        res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Audit failed</h4><p>' + e.message + '</p></div></div>';
+      })
+      .dispatchGeminiQuery("You are an AEO/GEO audit engine. Return only valid JSON.", [{role:'user', parts:[{text:prompt}]}]);
+  },
+  _showAuditResult: function(url) {
+    App.go('page_auditor');
+    setTimeout(function() {
+      document.getElementById('audit-url').value = url;
+      var res = document.getElementById('audit-results');
+      if (S.auditCache[url]) App._renderAuditResult(res, url, S.auditCache[url]);
+    }, 100);
+  },
+  _renderAuditResult: function(container, url, data) {
+    var statusIcons = {pass:'fas fa-check-circle', fail:'fas fa-times-circle', warn:'fas fa-exclamation-triangle', info:'fas fa-info-circle'};
+    var statusClass = {pass:'aci-pass', fail:'aci-fail', warn:'aci-warn', info:'aci-info'};
+    var catColors = {Technical:'badge-sky', Content:'badge-emerald', Schema:'badge-violet', Entity:'badge-purple', 'E-E-A-T':'badge-amber', 'Crawler Access':'badge-rose'};
+    var gradeColor = data.score >= 80 ? 'ok' : (data.score >= 60 ? 'warn' : 'err');
+    var html = '<div class="card-body"><div style="display:flex;align-items:flex-start;gap:20px;margin-bottom:20px;flex-wrap:wrap">' +
+      this.scoreRing(data.score, gradeColor, 'AEO / GEO Score') +
+      '<div style="flex:1;min-width:200px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase">Audited URL</div><div class="td-url" style="max-width:none;margin-bottom:10px">' + url + '</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.7">' + data.summary + '</div></div>' +
+      '<div style="flex-shrink:0"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase">Top Priority Fixes</div>';
+    if (data.topFixes) {
+      for (var i = 0; i < data.topFixes.length; i++) {
+        var f = data.topFixes[i];
+        html += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><div style="width:18px;height:18px;border-radius:50%;background:var(--bg-rose);color:var(--accent-rose);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (i+1) + '</div><div style="font-size:11px;color:var(--text-secondary)">' + f + '</div></div>';
+      }
+    }
+    html += '</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+    var counts = [
+      {l:'Pass', v:data.checks.filter(function(c){ return c.status === 'pass'; }).length, c:'ok'},
+      {l:'Warn', v:data.checks.filter(function(c){ return c.status === 'warn'; }).length, c:'warn'},
+      {l:'Fail', v:data.checks.filter(function(c){ return c.status === 'fail'; }).length, c:'err'},
+      {l:'Info', v:data.checks.filter(function(c){ return c.status === 'info'; }).length, c:'info'}
+    ];
+    for (var i = 0; i < counts.length; i++) {
+      var s = counts[i];
+      html += '<div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px 14px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--accent-' + s.c + ')">' + s.v + '</div><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">' + s.l + '</div></div>';
+    }
+    html += '</div>';
+    for (var i = 0; i < data.checks.length; i++) {
+      var c = data.checks[i];
+      var icon = statusIcons[c.status] || statusIcons.info;
+      var cls = statusClass[c.status] || 'aci-info';
+      var catColor = catColors[c.category] || 'badge-muted';
+      var impactClass = c.impact === 'High' ? 'badge-rose' : (c.impact === 'Medium' ? 'badge-amber' : 'badge-muted');
+      html += '<div class="audit-check"><div class="acheck-icon ' + cls + '"><i class="' + icon + '"></i></div><div class="acheck-body"><div class="acheck-title">' + c.title + ' <span class="badge ' + catColor + '" style="margin-left:4px">' + c.category + '</span> <span class="badge ' + impactClass + '">' + c.impact + '</span></div><div class="acheck-desc">' + c.description + '</div>' + (c.fix ? '<div class="acheck-fix">→ ' + c.fix + '</div>' : '') + '</div></div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  },
+
+  // ── SCHEMA GENERATOR HELPERS ──────────────────────────
+  _generateSchema: function() {
+    var type = document.getElementById('schema-type').value;
+    var url = document.getElementById('schema-url').value.trim();
+    var topic = document.getElementById('schema-topic').value.trim();
+    if (!topic) { Toast.show('warn','Topic required','Describe your page content first.'); return; }
+    var out = document.getElementById('schema-output');
+    var copyBtn = document.getElementById('btn-copy-schema');
+    out.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Generating schema…</p></div>';
+    var prompt = 'Generate valid ' + type + ' JSON-LD schema markup for the following page. URL: ' + (url || 'https://example.com/page') + '. Schema type: ' + type + '. Content description: ' + topic + '. Rules: Return ONLY the raw JSON-LD script content (the object inside <script> tags), not the script tags themselves. Use real, specific values based on the description. For FAQPage: include at least 3-5 Q&A pairs. For HowTo: include at least 4-6 concrete steps. Make all text answer-first, concise, and extractable by AI. Include datePublished and dateModified where applicable (use today: ' + new Date().toISOString().slice(0,10) + '). Return ONLY the JSON object, no markdown, no explanation.';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(raw) {
+        var clean = raw.replace(/```json|```/g,'').trim();
+        out.innerHTML = '<div class="schema-out">' + clean.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+        copyBtn.style.display = '';
+        copyBtn.onclick = function() {
+          navigator.clipboard.writeText(clean);
+          Toast.show('ok','Copied','JSON-LD schema copied to clipboard.');
+        };
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Generation failed', e.message);
+        out.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Generation failed</h4><p>' + e.message + '</p></div>';
+      })
+      .dispatchGeminiQuery("You generate valid schema.org JSON-LD. Return only JSON.", [{role:'user', parts:[{text:prompt}]}]);
+  },
+
+  // ── CONTENT REWRITER HELPERS ──────────────────────────
+  _runRewrite: function() {
+    var original = document.getElementById('rw-original').value.trim();
+    var kw = document.getElementById('rw-kw').value.trim();
+    var focus = document.getElementById('rw-focus').value;
+    if (!original) { Toast.show('warn','Content required','Paste your original content first.'); return; }
+    var out = document.getElementById('rw-output');
+    var copyBtn = document.getElementById('btn-copy-rw');
+    out.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px">⏳ Rewriting for AI citation…</div>';
+    var focusInstructions = {
+      aio: 'Optimize for Google AI Overview citation: answer-first structure, 40-60 word definition block after H1, use H2s as question-phrased subheadings, bulleted or numbered lists for multi-part answers, add entity context.',
+      featured: 'Optimize for featured snippet: provide one clear 40-60 word definition paragraph, use a table for comparison content, numbered list for steps.',
+      perplexity: 'Optimize for Perplexity/ChatGPT citation: concise factual statements, clear source-able claims, structured with headers, include specific statistics or data points.',
+      faq: 'Restructure as an FAQ: convert key points into question-answer pairs, each answer 40-80 words, use conversational question phrasing for H2s.',
+      howto: 'Restructure as a step-by-step guide: numbered steps, each step has a title and 1-2 sentence description, lead with a brief 40-word "what this guide covers" paragraph.'
+    };
+    var prompt = 'You are an AEO/GEO content specialist. Rewrite the content below to maximize AI citation likelihood. Target keyword: ' + (kw || '(not specified)') + '. Optimization focus: ' + (focusInstructions[focus] || focusInstructions.aio) + '. Core AEO rewriting rules: 1. Answer-first: Put the direct answer in the first 40-60 words after the opening heading. 2. Definition block: A standalone 40-60 word paragraph that directly defines or answers the query topic. 3. Structured headings: Write H2s as complete questions. 4. Lists over prose: Convert any enumerable content to bullet or numbered lists. 5. Concise sentences: Max 25 words per sentence in key sections. 6. Remove filler: Cut "in today\'s world", "it\'s important to note", "as we can see", and similar padding. 7. Entity mentions: Include related concepts and entities naturally. Original content: ' + original + '. Return the rewritten content in clean markdown format with proper heading hierarchy.';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(result) {
+        out.textContent = result;
+        copyBtn.style.display = '';
+        copyBtn.onclick = function() {
+          navigator.clipboard.writeText(result);
+          Toast.show('ok','Copied','Rewritten content copied.');
+        };
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Rewrite failed', e.message);
+        out.innerHTML = '<div style="color:var(--accent-rose)">' + e.message + '</div>';
+      })
+      .dispatchGeminiQuery("You are an expert AEO content rewriter. Be direct and specific.", [{role:'user', parts:[{text:prompt}]}]);
+  },
+
+  _runBatch: function() {
+    var urls = document.getElementById('batch-urls').value.trim().split('\n').map(function(u) { return u.trim(); }).filter(function(u) { return u; });
+    var type = document.getElementById('batch-type').value;
+    if (!urls.length) { Toast.show('warn','URLs required','Enter at least one URL.'); return; }
+    var res = document.getElementById('batch-results');
+    res.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Analyzing ' + urls.length + ' URLs…</p></div>';
+    var prompt = 'Perform a quick ' + type + ' analysis for these URLs. For each URL, return a short assessment. Analysis type: ' + type + '. URLs: ' + urls.map(function(u,i){ return (i+1) + '. ' + u; }).join('\n') + '. Return a JSON array like: [{"url":"...","score":<0-100>,"status":"<pass|warn|fail>","finding":"<1 sentence finding>","action":"<1 sentence action>"}]. Infer from URL patterns, common page types, and best practices. Return ONLY JSON.';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(raw) {
+        try {
+          var data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+          var tableHtml = '<div class="tbl-wrap"><table><thead><tr><th>URL</th><th>Score</th><th>Finding</th><th>Action</th></tr></thead><tbody>';
+          for (var i = 0; i < data.length; i++) {
+            var d = data[i];
+            var badgeClass = d.status === 'pass' ? 'badge-emerald' : (d.status === 'warn' ? 'badge-amber' : 'badge-rose');
+            tableHtml += '<tr><td class="td-url">' + d.url + '</td><td><span class="badge ' + badgeClass + '">' + d.score + '/100</span></td><td style="font-size:11px">' + d.finding + '</td><td style="font-size:11px;color:var(--accent-violet-light)">' + d.action + '</td></tr>';
+          }
+          tableHtml += '</tbody></table></div>';
+          res.innerHTML = tableHtml;
+        } catch(e) {
+          res.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Failed</h4><p>' + e.message + '</p></div>';
+        }
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Batch failed', e.message);
+        res.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Failed</h4><p>' + e.message + '</p></div>';
+      })
+      .dispatchGeminiQuery("", [{role:'user', parts:[{text:prompt}]}]);
+  },
+
+  // ── PROMPT TESTER HELPERS ─────────────────────────────
+  _runPromptTest: function() {
+    var brand = document.getElementById('pt-brand').value.trim();
+    var industry = document.getElementById('pt-industry').value.trim();
+    var prompts = document.getElementById('pt-prompts').value.trim().split('\n').map(function(p) { return p.trim(); }).filter(function(p) { return p; });
+    if (!brand || !prompts.length) { Toast.show('warn','Required fields','Enter your brand name and at least one prompt.'); return; }
+    var res = document.getElementById('pt-results');
+    res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Testing ' + prompts.length + ' prompts for "' + brand + '"…</p></div></div>';
+    var prompt = 'You are simulating how AI answer engines (ChatGPT, Perplexity, Google AI Overviews) would respond to user queries, and analyzing brand citation likelihood. Brand being tested: ' + brand + '. Industry/niche: ' + (industry || '(not specified)') + '. For each prompt below, simulate a realistic AI answer engine response AND provide a citation analysis. Return ONLY a JSON array: [{"prompt":"<the original prompt>","cited":<true/false>,"citationScore":<0-100>,"simulatedAnswer":"<A realistic 60-100 word AI answer>","whyCited":"<1 sentence if cited>","whyNot":"<1 sentence if not cited>","fix":"<1 specific action to improve citation likelihood>"}]. Prompts: ' + prompts.map(function(p,i){ return (i+1) + '. ' + p; }).join('\n') + '. Be realistic. Most brands are NOT cited in AI answers unless they have strong authority signals, structured data, and high-quality content. Return ONLY JSON.';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(raw) {
+        try {
+          var data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+          var cited = data.filter(function(d){ return d.cited; }).length;
+          var avgScore = Math.round(data.reduce(function(s,d){ return s + (d.citationScore || 0); }, 0) / data.length);
+          var html = '<div class="card-body"><div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">' +
+            self.scoreRing(avgScore, avgScore >= 60 ? 'ok' : (avgScore >= 35 ? 'warn' : 'err'), 'Citation Score') +
+            '<div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">' + brand + '</div><div style="font-size:11px;color:var(--text-tertiary);line-height:1.7">' +
+            cited + ' of ' + data.length + ' prompts would likely cite your brand. ' +
+            (avgScore >= 60 ? 'Strong citation signals — focus on maintaining authority.' : (avgScore >= 35 ? 'Moderate visibility — specific content and schema improvements needed.' : 'Low citation likelihood — significant AEO/GEO investment needed.')) +
+            '</div></div></div>';
+          for (var i = 0; i < data.length; i++) {
+            var d = data[i];
+            var badgeCls = d.cited ? 'badge-emerald' : 'badge-rose';
+            var colorCls = d.citationScore >= 60 ? 'var(--accent-emerald)' : (d.citationScore >= 35 ? 'var(--accent-amber)' : 'var(--accent-rose)');
+            html += '<div class="ptest-result"><div class="ptest-hdr"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">' + d.prompt + '</div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + badgeCls + '">' + (d.cited ? 'Likely Cited' : 'Not Cited') + '</span><span style="font-size:11px;font-weight:600;color:' + colorCls + '">' + d.citationScore + '%</span></div></div><div class="ptest-body">' + d.simulatedAnswer + '</div><div style="font-size:11px;color:' + (d.cited ? 'var(--accent-emerald)' : 'var(--accent-rose)') + ';margin-top:6px">' + (d.cited ? d.whyCited : d.whyNot) + '</div>' + (d.fix ? '<div style="font-size:11px;color:var(--accent-violet-light);margin-top:4px;font-style:italic">→ Fix: ' + d.fix + '</div>' : '') + '</div>';
+          }
+          html += '</div>';
+          res.innerHTML = html;
+        } catch(e) {
+          res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Test failed</h4><p>' + e.message + '</p></div></div>';
+        }
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Prompt test failed', e.message);
+        res.innerHTML = '<div class="card-body"><div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Test failed</h4><p>' + e.message + '</p></div></div>';
+      })
+      .dispatchGeminiQuery("", [{role:'user', parts:[{text:prompt}]}]);
+  },
+
+  // ── GEO CHECKLIST HELPERS ─────────────────────────────
+  _toggleCheck: function(id) {
+    S.geoChecklist[id] = !S.geoChecklist[id];
+    localStorage.setItem('si_geochecklist', JSON.stringify(S.geoChecklist));
+    this.renderContent();
+  },
+  _resetChecklist: function() {
+    S.geoChecklist = {};
+    localStorage.removeItem('si_geochecklist');
+    this.renderContent();
+    Toast.show('info','Reset','Checklist cleared.');
+  },
+
+  // ── SITE AUDIT HELPERS ────────────────────────────────
+  fetchAuditData: function(callback) {
+    if (localStorage.getItem('auditData')) {
+      try {
+        var parsed = JSON.parse(localStorage.getItem('auditData'));
+        if (Date.now() - parsed.timestamp < 3600000) {
+          S.auditData = parsed.data;
+          if (callback) callback();
+          return;
+        }
+      } catch(e) {}
+    }
+    var self = this;
+    setTimeout(function() {
+      S.auditData = {
+        performance:78, accessibility:85, bestPractices:92, seo:81,
+        technical:{issues:[{type:'Missing meta description',count:12},{type:'Duplicate H1',count:3}]},
+        coreWebVitals:{lcp:2.4, fid:45, cls:0.12, distribution:{good:65, needsImprovement:25, poor:10}},
+        accessibility:{violations:[{id:'color-contrast', description:'Low contrast', impact:'serious'}]},
+        security:{https:true, sslValid:true, mixedContent:false, secureForms:true},
+        mobile:{viewport:true, touchTargets:true, fontSize:true, tapSpacing:true},
+        performanceDetail:{fcp:1.8, si:3.2, tti:4.1, renderBlocking:12, unusedCSS:45, unusedJS:30},
+        content:{duplicateMeta:8, thinContent:15, headingStructure:'Good', brokenLinks:3},
+        links:{internal:120, external:45, canonical:'92%', sitemap:true, robots:true}
+      };
+      localStorage.setItem('auditData', JSON.stringify({data:S.auditData, timestamp:Date.now()}));
+      if (callback) callback();
+    }, 500);
+  },
+  renderAuditOverview: function(el) {
+    if (!S.auditData) { S.auditData = this.getDummyAuditData(); }
+    var perf = S.auditData.performance || 0;
+    var a11y = S.auditData.accessibility || 0;
+    var bp = S.auditData.bestPractices || 0;
+    var seo = S.auditData.seo || 0;
+    el.innerHTML =
+      '<div class="kpi-grid" id="audit-kpis"></div><div style="margin-bottom:16px"><button class="btn btn-primary" id="btn-run-audit"><i class="fas fa-sync-alt"></i> Run New Audit</button></div><div class="g2">' +
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-tachometer-alt"></i>Performance Score</div></div><div class="chart-wrap" style="height:180px"><canvas id="ch-perf-gauge"></canvas></div></div>' +
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-universal-access"></i>Accessibility Score</div></div><div class="chart-wrap" style="height:180px"><canvas id="ch-a11y-gauge"></canvas></div></div>' +
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-check-circle"></i>Best Practices</div></div><div class="chart-wrap" style="height:180px"><canvas id="ch-bp-gauge"></canvas></div></div>' +
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-simple"></i>SEO Score</div></div><div class="chart-wrap" style="height:180px"><canvas id="ch-seo-gauge"></canvas></div></div>' +
+      '</div>';
+    var kpis = [
+      {label:'Performance', val:perf+'%', accent:perf>90?'#10B981':perf>60?'#F59E0B':'#F43F5E'},
+      {label:'Accessibility', val:a11y+'%', accent:a11y>90?'#10B981':a11y>60?'#F59E0B':'#F43F5E'},
+      {label:'Best Practices', val:bp+'%', accent:bp>90?'#10B981':bp>60?'#F59E0B':'#F43F5E'},
+      {label:'SEO', val:seo+'%', accent:seo>90?'#10B981':seo>60?'#F59E0B':'#F43F5E'}
+    ];
+    var html = '';
+    for (var i = 0; i < kpis.length; i++) {
+      var k = kpis[i];
+      html += '<div class="kpi" style="animation-delay:' + (i*0.06) + 's"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val">' + k.val + '</div></div>';
+    }
+    document.getElementById('audit-kpis').innerHTML = html;
+    var self = this;
+    ['perf','a11y','bp','seo'].forEach(function(id, idx) {
+      var scores = [perf, 100 - perf];
+      if (idx === 1) scores[0] = a11y;
+      else if (idx === 2) scores[0] = bp;
+      else if (idx === 3) scores[0] = seo;
+      var canvasId = 'ch-' + id + '-gauge';
+      destroyChart(canvasId);
+      var ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      S.charts[canvasId] = new Chart(ctx, {
+        type:'doughnut',
+        data:{labels:['Score',''], datasets:[{data:scores, backgroundColor:['rgba(16,185,129,0.8)','rgba(75,85,104,0.2)'], borderWidth:0}]},
+        options:{responsive:true, maintainAspectRatio:false, cutout:'75%', plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+      });
+    });
+    document.getElementById('btn-run-audit').addEventListener('click', function() {
+      S.auditData = null;
+      localStorage.removeItem('auditData');
+      self.fetchAuditData(function() { self.vAudit(0, document.getElementById('content')); });
+    });
+  },
+  renderTechnicalSEO: function(el) {
+    var issues = (S.auditData && S.auditData.technical && S.auditData.technical.issues) || [];
+    var html = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-code"></i>Technical SEO Issues</div><span class="badge badge-rose">' + issues.length + ' found</span></div><div class="tbl-wrap">';
+    if (issues.length) {
+      html += '<table><thead><tr><th>Issue Type</th><th>Count</th></tr></thead><tbody>';
+      for (var i = 0; i < issues.length; i++) {
+        var issue = issues[i];
+        html += '<tr><td class="td-mono">' + issue.type + '</td><td>' + issue.count + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    } else {
+      html += '<div class="empty-state"><p>No technical issues detected.</p></div>';
+    }
+    html += '</div></div><div class="g2 gap-top"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-tags"></i>Meta Tags</div></div><div class="card-body"><div>✅ Title tags: 85% present</div><div>⚠️ Meta descriptions: 62% present</div><div>✅ Canonical tags: 98% present</div></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-database"></i>Structured Data</div></div><div class="card-body"><div>✅ Schema.org markup: detected</div><div>✅ Product markup: present on 8 pages</div><div>⚠️ Missing JSON-LD on 22 pages</div></div></div></div>';
+    el.innerHTML = html;
+  },
+  renderCoreWebVitals: function(el) {
+    var cwv = (S.auditData && S.auditData.coreWebVitals) || {lcp:2.4, fid:45, cls:0.12, distribution:{good:65, needsImprovement:25, poor:10}};
+    el.innerHTML =
+      '<div class="kpi-grid" id="cwv-kpis"></div><div class="card gap-top"><div class="card-head"><div class="card-title"><i class="fas fa-tachometer-alt"></i>Core Web Vitals Distribution</div></div><div class="chart-wrap tall" style="height:240px"><canvas id="ch-cwv-bar"></canvas></div></div>';
+    var kpis = [
+      {label:'LCP', val:cwv.lcp+'s', accent:cwv.lcp<2.5?'#10B981':cwv.lcp<4?'#F59E0B':'#F43F5E'},
+      {label:'FID', val:cwv.fid+'ms', accent:cwv.fid<100?'#10B981':cwv.fid<300?'#F59E0B':'#F43F5E'},
+      {label:'CLS', val:cwv.cls.toFixed(2), accent:cwv.cls<0.1?'#10B981':cwv.cls<0.25?'#F59E0B':'#F43F5E'}
+    ];
+    var html = '';
+    for (var i = 0; i < kpis.length; i++) {
+      var k = kpis[i];
+      html += '<div class="kpi" style="animation-delay:' + (i*0.06) + 's"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val">' + k.val + '</div></div>';
+    }
+    document.getElementById('cwv-kpis').innerHTML = html;
+    var dist = cwv.distribution;
+    mkBar('ch-cwv-bar', ['Good','Needs Improvement','Poor'], [{label:'Pages (%)', data:[dist.good, dist.needsImprovement, dist.poor], backgroundColor:['#10B981','#F59E0B','#F43F5E']}]);
+  },
+  renderAccessibility: function(el) {
+    var violations = (S.auditData && S.auditData.accessibility && S.auditData.accessibility.violations) || [];
+    var html = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-universal-access"></i>Accessibility Violations</div><span class="badge badge-rose">' + violations.length + '</span></div><div class="tbl-wrap">';
+    if (violations.length) {
+      html += '<table><thead><tr><th>Violation</th><th>Impact</th></tr></thead><tbody>';
+      for (var i = 0; i < violations.length; i++) {
+        var v = violations[i];
+        var impactCls = v.impact === 'critical' ? 'badge-rose' : 'badge-amber';
+        html += '<tr><td>' + v.description + '</td><td><span class="badge ' + impactCls + '">' + v.impact + '</span></td></tr>';
+      }
+      html += '</tbody></table>';
+    } else {
+      html += '<div class="empty-state"><p>No accessibility violations detected.</p></div>';
+    }
+    html += '</div></div>';
+    el.innerHTML = html;
+  },
+  renderSecurity: function(el) {
+    var sec = (S.auditData && S.auditData.security) || {https:true, sslValid:true, mixedContent:false, secureForms:true};
+    var kpis = [
+      {label:'Security Score', val:(sec.https && sec.sslValid) ? '✅ Pass' : '⚠️ Needs attention', accent:(sec.https && sec.sslValid) ? '#10B981' : '#F59E0B'},
+      {label:'Mixed Content', val:sec.mixedContent ? 'Found' : 'None', accent:sec.mixedContent ? '#F43F5E' : '#10B981'}
+    ];
+    var html = '<div class="kpi-grid" id="sec-kpis"></div><div class="card gap-top"><div class="card-head"><div class="card-title"><i class="fas fa-shield-alt"></i>Security Checks</div></div><div class="tbl-wrap"><table><thead><tr><th>Check</th><th>Status</th></tr></thead><tbody>' +
+      '<tr><td>HTTPS</td><td><span class="badge ' + (sec.https ? 'badge-emerald' : 'badge-rose') + '">' + (sec.https ? '✅ Secure' : '❌ Not secure') + '</span></td></tr>' +
+      '<tr><td>SSL Certificate</td><td><span class="badge ' + (sec.sslValid ? 'badge-emerald' : 'badge-rose') + '">' + (sec.sslValid ? '✅ Valid' : '❌ Expired/Invalid') + '</span></td></tr>' +
+      '<tr><td>Mixed Content</td><td><span class="badge ' + (!sec.mixedContent ? 'badge-emerald' : 'badge-rose') + '">' + (!sec.mixedContent ? '✅ None' : '⚠️ Found') + '</span></td></tr>' +
+      '<tr><td>Secure Forms</td><td><span class="badge ' + (sec.secureForms ? 'badge-emerald' : 'badge-amber') + '">' + (sec.secureForms ? '✅ All forms use HTTPS' : '⚠️ Some forms not secure') + '</span></td></tr>' +
+      '</tbody></table></div></div>';
+    el.innerHTML = html;
+    var kpisHtml = '';
+    for (var i = 0; i < kpis.length; i++) {
+      var k = kpis[i];
+      kpisHtml += '<div class="kpi"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val" style="font-size:16px">' + k.val + '</div></div>';
+    }
+    document.getElementById('sec-kpis').innerHTML = kpisHtml;
+  },
+  renderMobileUsability: function(el) {
+    var mu = (S.auditData && S.auditData.mobile) || {viewport:true, touchTargets:true, fontSize:true, tapSpacing:true};
+    el.innerHTML =
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-mobile-alt"></i>Mobile Usability</div></div><div class="tbl-wrap"><table><thead><tr><th>Check</th><th>Status</th></tr></thead><tbody>' +
+      '<tr><td>Viewport set</td><td><span class="badge ' + (mu.viewport ? 'badge-emerald' : 'badge-rose') + '">' + (mu.viewport ? '✅' : '❌') + '</span></td></tr>' +
+      '<tr><td>Touch targets size</td><td><span class="badge ' + (mu.touchTargets ? 'badge-emerald' : 'badge-amber') + '">' + (mu.touchTargets ? '✅ Adequate' : '⚠️ Too small') + '</span></td></tr>' +
+      '<tr><td>Font size readable</td><td><span class="badge ' + (mu.fontSize ? 'badge-emerald' : 'badge-amber') + '">' + (mu.fontSize ? '✅ Good' : '⚠️ Too small') + '</span></td></tr>' +
+      '<tr><td>Tap spacing</td><td><span class="badge ' + (mu.tapSpacing ? 'badge-emerald' : 'badge-amber') + '">' + (mu.tapSpacing ? '✅ Sufficient' : '⚠️ Too close') + '</span></td></tr>' +
+      '</tbody></table></div></div>';
+  },
+  renderPerformanceDetail: function(el) {
+    var perf = (S.auditData && S.auditData.performanceDetail) || {fcp:1.8, si:3.2, tti:4.1, renderBlocking:12, unusedCSS:45, unusedJS:30};
+    var kpis = [
+      {label:'FCP', val:perf.fcp+'s', accent:perf.fcp<1.8?'#10B981':'#F59E0B'},
+      {label:'TTI', val:perf.tti+'s', accent:perf.tti<3.8?'#10B981':'#F59E0B'},
+      {label:'Speed Index', val:perf.si+'s', accent:perf.si<3.4?'#10B981':'#F59E0B'}
+    ];
+    el.innerHTML =
+      '<div class="kpi-grid" id="perf-detail-kpis"></div><div class="g2 gap-top"><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i>Key Metrics</div></div><div class="tbl-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Status</th></tr></thead><tbody>' +
+      '<tr><td>First Contentful Paint</td><td>' + perf.fcp + 's</td><td><span class="badge ' + (perf.fcp < 1.8 ? 'badge-emerald' : perf.fcp < 3 ? 'badge-amber' : 'badge-rose') + '">' + (perf.fcp < 1.8 ? '✅ Good' : perf.fcp < 3 ? '⚠️ Needs improvement' : '❌ Poor') + '</span></td></tr>' +
+      '<tr><td>Speed Index</td><td>' + perf.si + 's</td><td><span class="badge ' + (perf.si < 3.4 ? 'badge-emerald' : perf.si < 5.8 ? 'badge-amber' : 'badge-rose') + '">' + (perf.si < 3.4 ? '✅ Good' : perf.si < 5.8 ? '⚠️ Needs improvement' : '❌ Poor') + '</span></td></tr>' +
+      '<tr><td>Time to Interactive</td><td>' + perf.tti + 's</td><td><span class="badge ' + (perf.tti < 3.8 ? 'badge-emerald' : perf.tti < 7.3 ? 'badge-amber' : 'badge-rose') + '">' + (perf.tti < 3.8 ? '✅ Good' : perf.tti < 7.3 ? '⚠️ Needs improvement' : '❌ Poor') + '</span></td></tr>' +
+      '</tbody></table></div></div><div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-tools"></i>Optimization Opportunities</div></div><div class="tbl-wrap"><table>' +
+      '<tr><td>Render‑blocking resources</td><td>' + perf.renderBlocking + '</td><td><span class="badge ' + (perf.renderBlocking < 6 ? 'badge-emerald' : 'badge-amber') + '">' + (perf.renderBlocking < 6 ? '✅ Low' : '⚠️ Reduce') + '</span></td></tr>' +
+      '<tr><td>Unused CSS</td><td>' + perf.unusedCSS + '%</td><td><span class="badge ' + (perf.unusedCSS < 20 ? 'badge-emerald' : perf.unusedCSS < 50 ? 'badge-amber' : 'badge-rose') + '">' + (perf.unusedCSS < 20 ? '✅ Good' : perf.unusedCSS < 50 ? '⚠️ Consider pruning' : '❌ Excessive') + '</span></td></tr>' +
+      '<tr><td>Unused JavaScript</td><td>' + perf.unusedJS + '%</td><td><span class="badge ' + (perf.unusedJS < 20 ? 'badge-emerald' : perf.unusedJS < 50 ? 'badge-amber' : 'badge-rose') + '">' + (perf.unusedJS < 20 ? '✅ Good' : perf.unusedJS < 50 ? '⚠️ Consider pruning' : '❌ Excessive') + '</span></td></tr>' +
+      '</table></div></div></div>';
+    var kpisHtml = '';
+    for (var i = 0; i < kpis.length; i++) {
+      var k = kpis[i];
+      kpisHtml += '<div class="kpi"><div class="kpi-accent" style="background:' + k.accent + '"></div><div class="kpi-label">' + k.label + '</div><div class="kpi-val">' + k.val + '</div></div>';
+    }
+    document.getElementById('perf-detail-kpis').innerHTML = kpisHtml;
+  },
+  renderContentQuality: function(el) {
+    var cq = (S.auditData && S.auditData.content) || {duplicateMeta:8, thinContent:15, headingStructure:'Good', brokenLinks:3};
+    el.innerHTML =
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-file-alt"></i>Content Quality</div></div><div class="tbl-wrap"><table><thead><tr><th>Issue</th><th>Count / Status</th></tr></thead><tbody>' +
+      '<tr><td>Duplicate meta descriptions</td><td>' + cq.duplicateMeta + '</td></tr>' +
+      '<tr><td>Pages with thin content (&lt;300 words)</td><td>' + cq.thinContent + '</td></tr>' +
+      '<tr><td>Heading structure</td><td><span class="badge ' + (cq.headingStructure === 'Good' ? 'badge-emerald' : 'badge-amber') + '">' + cq.headingStructure + '</span></td></tr>' +
+      '<tr><td>Broken internal links</td><td>' + cq.brokenLinks + '</td></tr>' +
+      '</tbody></table></div></div>';
+  },
+  renderLinksCrawlability: function(el) {
+    var links = (S.auditData && S.auditData.links) || {internal:120, external:45, canonical:'92%', sitemap:true, robots:true};
+    el.innerHTML =
+      '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-link"></i>Links &amp; Crawlability</div></div><div class="tbl-wrap"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>' +
+      '<tr><td>Internal links count</td><td>' + links.internal + '</td></tr>' +
+      '<tr><td>External links count</td><td>' + links.external + '</td></tr>' +
+      '<tr><td>Canonical tags present</td><td>' + links.canonical + '</td></tr>' +
+      '<tr><td>XML Sitemap</td><td><span class="badge ' + (links.sitemap ? 'badge-emerald' : 'badge-rose') + '">' + (links.sitemap ? '✅ Found' : '❌ Missing') + '</span></td></tr>' +
+      '<tr><td>robots.txt</td><td><span class="badge ' + (links.robots ? 'badge-emerald' : 'badge-rose') + '">' + (links.robots ? '✅ Present' : '❌ Missing') + '</span></td></tr>' +
+      '</tbody></table></div></div>';
+  },
+  getDummyAuditData: function() {
+    return {
+      performance:78, accessibility:85, bestPractices:92, seo:81,
+      technical:{issues:[{type:'Missing meta description',count:12},{type:'Duplicate H1',count:3}]},
+      coreWebVitals:{lcp:2.4, fid:45, cls:0.12, distribution:{good:65, needsImprovement:25, poor:10}},
+      accessibility:{violations:[{id:'color-contrast', description:'Low contrast', impact:'serious'}]},
+      security:{https:true, sslValid:true, mixedContent:false, secureForms:true},
+      mobile:{viewport:true, touchTargets:true, fontSize:true, tapSpacing:true},
+      performanceDetail:{fcp:1.8, si:3.2, tti:4.1, renderBlocking:12, unusedCSS:45, unusedJS:30},
+      content:{duplicateMeta:8, thinContent:15, headingStructure:'Good', brokenLinks:3},
+      links:{internal:120, external:45, canonical:'92%', sitemap:true, robots:true}
+    };
+  },
+
+  // ── HELPER FUNCTIONS ──────────────────────────────────
+  scoreRing: function(score, color, label) {
+    var hex = ({ok:'#10b981', warn:'#f59e0b', err:'#ef4444', indigo:'#6366f1', purple:'#a78bfa', info:'#38bdf8'}[color]) || '#6366f1';
+    var r = 40, circ = 2 * Math.PI * r, offset = circ - (Math.min(100, Math.max(0, score)) / 100) * circ;
+    return '<div class="score-ring-wrap"><div class="score-ring"><svg viewBox="0 0 100 100" width="100" height="100"><circle class="bg-track" cx="50" cy="50" r="' + r + '"/><circle class="fg-track" cx="50" cy="50" r="' + r + '" stroke="' + hex + '" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '"/></svg><div class="score-val"><div class="score-num" style="color:' + hex + '">' + score + '</div><div class="score-lbl">/ 100</div></div></div><div style="font-size:11px;color:var(--text-tertiary);font-weight:500">' + label + '</div></div>';
+  },
+
+  renderPosAnalysis: function() {
+    var rows = (S.gscRows && S.gscRows.rows) || [];
+    var bands = [{l:'1–3', min:1, max:3.99}, {l:'4–10', min:4, max:10.99}, {l:'11–20', min:11, max:20.99}, {l:'21–50', min:21, max:50.99}, {l:'51–100', min:51, max:100}];
+    var dist = bands.map(function(b) {
+      var count = rows.filter(function(r) { return r.position >= b.min && r.position <= b.max; }).length;
+      var clicks = rows.filter(function(r) { return r.position >= b.min && r.position <= b.max; }).reduce(function(s,r) { return s + r.clicks; }, 0);
+      return { l: b.l, count: count, clicks: clicks };
+    });
+    var body = document.getElementById('pos-dist-body');
+    if (body) {
+      var max = 1;
+      for (var i = 0; i < dist.length; i++) {
+        if (dist[i].count > max) max = dist[i].count;
+      }
+      if (max === 0) max = 1;
+      var colors = ['#10B981','#38BDF8','#F59E0B','#F43F5E','#4B5568'];
+      var html = '<div class="pos-dist">';
+      for (var i = 0; i < dist.length; i++) {
+        var d = dist[i];
+        var height = Math.max(4, (d.count / max) * 70);
+        html += '<div class="pos-col"><div class="pos-fill" style="height:' + height + 'px;background:' + colors[i] + '"></div><div class="pos-lbl">' + d.l + '</div><div class="pos-lbl" style="color:var(--text-primary)">' + d.count + '</div></div>';
+      }
+      html += '</div><div style="margin-top:14px">';
+      for (var i = 0; i < dist.length; i++) {
+        var d = dist[i];
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px"><span style="color:var(--text-tertiary)">Pos ' + d.l + '</span><span style="font-family:var(--font-mono);color:var(--text-primary)">' + d.count + ' queries</span><span style="color:' + colors[i] + '">' + F.n(d.clicks) + ' clicks</span></div>';
+      }
+      html += '</div>';
+      body.innerHTML = html;
+    }
+    var barLabels = dist.map(function(d) { return d.l; });
+    var barData = dist.map(function(d) { return d.clicks; });
+    mkBar('ch-pos-band', barLabels, [{label:'Clicks', data:barData, backgroundColor:['rgba(16,185,129,0.6)','rgba(56,189,248,0.6)','rgba(245,158,11,0.6)','rgba(244,63,94,0.5)','rgba(75,85,104,0.5)']}]);
+    var sample = rows.slice(0,200);
+    var scatterData = sample.map(function(r) { return {x:r.position, y:r.ctr*100, label:r.keys[0]}; });
+    mkScatter('ch-scatter', [{label:'Queries', data:scatterData, backgroundColor:'rgba(124,111,247,0.45)', borderColor:'rgba(124,111,247,0.2)', radius:4}], {xLabel:'Average Position', yLabel:'CTR %'});
+  },
+  renderCTR: function() {
+    var rows = (S.gscRows && S.gscRows.rows) || [];
+    var bands = [{l:'1–3', min:1, max:3.99}, {l:'4–10', min:4, max:10.99}, {l:'11–20', min:11, max:20.99}, {l:'21–50', min:21, max:50.99}];
+    var bandCTR = bands.map(function(b) {
+      var r = rows.filter(function(x) { return x.position >= b.min && x.position <= b.max; });
+      var clicks = 0, imp = 0;
+      for (var i = 0; i < r.length; i++) { clicks += r[i].clicks; imp += r[i].impressions; }
+      return { l: b.l, ctr: imp ? (clicks / imp) * 100 : 0 };
+    });
+    var labels = bandCTR.map(function(b) { return b.l; });
+    var data = bandCTR.map(function(b) { return +b.ctr.toFixed(2); });
+    mkBar('ch-ctr-band', labels, [{label:'Avg CTR %', data:data, backgroundColor:['rgba(16,185,129,0.6)','rgba(56,189,248,0.6)','rgba(245,158,11,0.5)','rgba(244,63,94,0.4)']}]);
+    var opp = rows.filter(function(r) { return r.impressions > 50; }).slice(0,250);
+    var scatterData = opp.map(function(r) { return {x:r.position, y:r.ctr*100, label:r.keys[0]}; });
+    var colors = opp.map(function(r) { return r.position <= 10 && r.ctr < 0.02 ? 'rgba(244,63,94,0.65)' : 'rgba(124,111,247,0.4)'; });
+    mkScatter('ch-ctr-scatter', [{label:'Queries', data:scatterData, backgroundColor:colors, radius:4}], {xLabel:'Position', yLabel:'CTR %'});
+  },
+  renderDevices: function() {
+    var rows = (S.gscDevices && S.gscDevices.rows) || [];
+    var labels = rows.map(function(r) { return r.keys[0]; });
+    var clicks = rows.map(function(r) { return r.clicks; });
+    var impressions = rows.map(function(r) { return r.impressions; });
+    var colors = ['rgba(124,111,247,0.7)','rgba(56,189,248,0.7)','rgba(245,158,11,0.7)'];
+    mkDoughnut('ch-dev-c', labels, clicks, colors.slice(0, labels.length));
+    mkDoughnut('ch-dev-i', labels, impressions, colors.slice(0, labels.length));
+  },
+
+  qTable: function(rows, limit) {
+    limit = limit || 50;
+    return '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-search"></i>Top Queries</div></div>' + this.qTableInner(rows, limit) + '</div>';
+  },
+  qTableInner: function(rows, limit) {
+    limit = limit || 100;
+    if (!rows.length) return '<div class="empty-state"><i class="fas fa-search"></i><p>No query data loaded.</p></div>';
+    var display = rows.slice(0, limit);
+    var html = '<div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th><th></th></tr></thead><tbody>';
+    for (var i = 0; i < display.length; i++) {
+      var r = display[i];
+      var escaped = r.keys[0].replace(/'/g, "\\'");
+      html += '<tr><td class="td-mono">' + r.keys[0] + '</td><td>' + F.n(r.clicks) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.pct(r.ctr) + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td><button class="btn btn-ghost btn-sm" onclick="App.drill(\'' + escaped + '\')">Drill →</button></td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+  pgTable: function(rows, limit) {
+    limit = limit || 50;
+    if (!rows.length) return '<div class="card"><div class="empty-state"><p>No page data.</p></div></div>';
+    var html = '<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-file-alt"></i>Top Pages</div></div><div class="tbl-wrap tall"><table><thead><tr><th>URL</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th></tr></thead><tbody>';
+    for (var i = 0; i < Math.min(rows.length, limit); i++) {
+      var r = rows[i];
+      html += '<tr><td class="td-url">' + r.keys[0] + '</td><td>' + F.n(r.clicks) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.pct(r.ctr) + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+    return html;
+  },
+  channelTable: function() {
+    var rows = (S.ga4Channels && S.ga4Channels.rows) || [];
+    if (!rows.length) return '<div class="empty-state"><p>No channel data.</p></div>';
+    var html = '<div class="tbl-wrap"><table><thead><tr><th>Channel</th><th>Sessions</th><th>Users</th><th>Engagement Rate</th><th>Conversions</th></tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      html += '<tr><td class="td-mono">' + r.dimensionValues[0].value + '</td><td>' + F.n(+r.metricValues[0].value) + '</td><td>' + F.n(+r.metricValues[1].value) + '</td><td>' + F.pct(+r.metricValues[2].value) + '</td><td>' + F.n(+r.metricValues[3].value) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+  ga4PagesTable: function() {
+    var rows = (S.ga4Pages && S.ga4Pages.rows) || [];
+    if (!rows.length) return '<div class="empty-state"><p>No page data.</p></div>';
+    var html = '<div class="tbl-wrap tall"><table><thead><tr><th>Page Path</th><th>Views</th><th>Users</th><th>Avg Duration</th><th>Bounce Rate</th></tr></thead><tbody>';
+    for (var i = 0; i < Math.min(rows.length, 100); i++) {
+      var r = rows[i];
+      html += '<tr><td class="td-url">' + r.dimensionValues[0].value + '</td><td>' + F.n(+r.metricValues[0].value) + '</td><td>' + F.n(+r.metricValues[1].value) + '</td><td>' + F.dur(+r.metricValues[2].value) + '</td><td>' + F.pct(+r.metricValues[3].value) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+  deviceTable: function() {
+    var rows = (S.gscDevices && S.gscDevices.rows) || [];
+    if (!rows.length) return '<div class="empty-state"><p>No device data.</p></div>';
+    var html = '<div class="tbl-wrap"><table><thead><tr><th>Device</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th></tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      html += '<tr><td class="td-mono">' + r.keys[0] + '</td><td>' + F.n(r.clicks) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.pct(r.ctr) + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+  aioTable: function(rows) {
+    if (!rows.length) return '<div class="empty-state"><p>No AI Overview signals detected.</p></div>';
+    var html = '<div class="tbl-wrap tall"><table><thead><tr><th>Query</th><th>Impressions</th><th>Clicks</th><th>Avg Position</th><th>AIO Signal</th></tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var q = r.keys[0].toLowerCase();
+      var sig = /^(what|how|why)/.test(q) ? 'Strong' : (/\b(best|vs|top)\b/.test(q) ? 'Moderate' : 'Possible');
+      var bc = sig === 'Strong' ? 'badge-rose' : (sig === 'Moderate' ? 'badge-amber' : 'badge-muted');
+      html += '<tr><td class="td-mono">' + r.keys[0] + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.n(r.clicks) + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td><span class="badge ' + bc + '">' + sig + '</span></td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+  ctrOpps: function() {
+    var opps = ((S.gscRows && S.gscRows.rows) || []).filter(function(r) { return r.impressions > 200 && r.position <= 10 && r.ctr < 0.03; }).sort(function(a,b) { return b.impressions - a.impressions; }).slice(0,20);
+    if (!opps.length) return '<div class="empty-state" style="padding:24px"><p>No CTR opportunities found.</p></div>';
+    var html = '<div class="tbl-wrap"><table><thead><tr><th>Query</th><th>Pos</th><th>Impr</th><th>CTR</th></tr></thead><tbody>';
+    for (var i = 0; i < opps.length; i++) {
+      var r = opps[i];
+      html += '<tr><td class="td-mono" style="font-size:11px">' + r.keys[0] + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td><td>' + F.n(r.impressions) + '</td><td style="color:var(--accent-rose)">' + F.pct(r.ctr) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  },
+
+  // ── DRILLDOWN ──────────────────────────────────────────
+  drill: function(query) {
+    if (!Auth.ok()) return;
+    S.drill = query;
+    document.getElementById('drillbar').classList.add('visible');
+    document.getElementById('drill-label').textContent = query;
+    var el = document.getElementById('content');
+    el.innerHTML = '<div class="card"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading pages ranking for "' + query + '"…</p></div></div>';
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(data) {
+        var rows = data.rows || [];
+        document.getElementById('drill-count').textContent = rows.length + ' pages';
+        var html = '<div class="card"><div class="card-head"><div class="card-title">Pages ranking for: <span style="color:var(--accent-sky)">' + query + '</span></div></div><div class="tbl-wrap tall"><table><thead><tr><th>Page URL</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th></tr></thead><tbody>';
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          html += '<tr><td class="td-url">' + r.keys[0] + '</td><td>' + F.n(r.clicks) + '</td><td>' + F.n(r.impressions) + '</td><td>' + F.pct(r.ctr) + '</td><td class="' + posClass(r.position) + '">' + F.pos(r.position) + '</td></tr>';
+        }
+        html += '</tbody></table></div></div>';
+        el.innerHTML = html;
+      })
+      .withFailureHandler(function(e) {
+        Toast.show('err','Drilldown error', e.message);
+        el.innerHTML = '<div class="card"><div class="empty-state"><p>Error: ' + e.message + '</p></div></div>';
+      })
+      .fetchGSCDrill(query);
+  },
+  clearDrill: function() {
+    S.drill = null;
+    document.getElementById('drillbar').classList.remove('visible');
+  },
+
+  // ── COPILOT ────────────────────────────────────────────
+  renderCopilotMsgs: function() {
+    var el = document.getElementById('copilot-msgs');
+    if (!el) return;
+    if (!S.copilotHistory.length) {
+      el.innerHTML = '<div class="msg-ai">Hi! I\'m your SEO AI Copilot. I have access to your current GSC and GA4 data. Ask me anything.</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < S.copilotHistory.length; i++) {
+      var m = S.copilotHistory[i];
+      html += '<div class="msg-' + m.role + '">' + m.content + '</div>';
+    }
+    el.innerHTML = html;
+    el.scrollTop = el.scrollHeight;
+  },
+  sendCopilot: function(prompt) {
+    var input = document.getElementById('copilot-input');
+    var text = prompt || (input ? input.value.trim() : '');
+    if (!text) return;
+    if (input) input.value = '';
+    S.copilotHistory.push({role:'user', content:text});
+    this.renderCopilotMsgs();
+    var el = document.getElementById('copilot-msgs');
+    if (el) {
+      var t = document.createElement('div');
+      t.className = 'copilot-thinking';
+      t.innerHTML = '<span></span><span></span><span></span>';
+      el.appendChild(t);
+    }
+    var tot = gscTotals();
+    var top5q = ((S.gscRows && S.gscRows.rows) || []).slice(0,5).map(function(r) { return r.keys[0] + ' (pos:' + F.pos(r.position) + ', CTR:' + F.pct(r.ctr) + ')'; }).join(', ');
+    var systemPrompt = 'You are an expert SEO/AEO analyst. Domain: ' + (CFG.GSC_SITE || 'not set') + '. Clicks: ' + F.n(tot.clicks) + '. Top: ' + top5q;
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(reply) {
+        var thinking = document.querySelector('.copilot-thinking');
+        if (thinking) thinking.remove();
+        S.copilotHistory.push({role:'ai', content:reply});
+        self.renderCopilotMsgs();
+      })
+      .withFailureHandler(function(err) {
+        var thinking = document.querySelector('.copilot-thinking');
+        if (thinking) thinking.remove();
+        Toast.show('err','Copilot error', err.message);
+        S.copilotHistory.push({role:'ai', content:'Error: ' + err.message});
+        self.renderCopilotMsgs();
+      })
+      .dispatchGeminiQuery(systemPrompt, [{role:'user', parts:[{text:text}]}]);
+  },
+  generateAutoInsights: function() {
+    var btn = document.getElementById('btn-autogenerate');
+    var out = document.getElementById('auto-insights-output');
+    if (btn) btn.disabled = true;
+    if (out) out.innerHTML = '<span style="color:var(--text-tertiary)">Generating insights…</span>';
+    var tot = gscTotals();
+    var opps = ((S.gscRows && S.gscRows.rows) || []).filter(function(r) { return r.position >= 4 && r.position <= 15 && r.impressions > 100; }).length;
+    var gaps = ((S.gscRows && S.gscRows.rows) || []).filter(function(r) { return r.impressions > 200 && r.ctr < 0.01; }).length;
+    var prompt = 'Generate SEO report for ' + (CFG.GSC_SITE || 'site') + '. Clicks: ' + F.n(tot.clicks) + '. Avg Pos: ' + F.pos(tot.position) + '. Opps: ' + opps + '. Gaps: ' + gaps;
+    var self = this;
+    google.script.run
+      .withSuccessHandler(function(text) {
+        if (out) out.innerHTML = text.replace(/```html?|```/g,'');
+        if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+      })
+      .withFailureHandler(function(err) {
+        Toast.show('err','Insights error', err.message);
+        if (out) out.innerHTML = '<span style="color:var(--accent-rose)">Error: ' + err.message + '</span>';
+        if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+      })
+      .dispatchGeminiQuery("You are an expert SEO data analyst.", [{role:'user', parts:[{text:prompt}]}]);
+  },
+
+  // ── EXPORT ──────────────────────────────────────────────
+  exportGSCCSV: function() {
+    var rows = (S.gscRows && S.gscRows.rows) || [];
+    var csv = 'Query,Clicks,Impressions,CTR,Position\n';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      csv += '"' + r.keys[0] + '",' + r.clicks + ',' + r.impressions + ',' + (r.ctr*100).toFixed(2) + ',' + r.position.toFixed(1) + '\n';
+    }
+    this._dl(csv, 'gsc-queries.csv');
+    Toast.show('ok','Exported', rows.length + ' rows downloaded.');
+  },
+  exportGA4CSV: function() {
+    var rows = (S.ga4Pages && S.ga4Pages.rows) || [];
+    var csv = 'Path,Views,Users,Avg Duration,Bounce Rate\n';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      csv += '"' + r.dimensionValues[0].value + '",' + r.metricValues[0].value + ',' + r.metricValues[1].value + ',' + r.metricValues[2].value + ',' + r.metricValues[3].value + '\n';
+    }
+    this._dl(csv, 'ga4-pages.csv');
+    Toast.show('ok','Exported', rows.length + ' rows downloaded.');
+  },
+  _dl: function(csv, name) {
+    var b = new Blob([csv], {type:'text/csv'});
+    var u = URL.createObjectURL(b);
+    var a = document.createElement('a');
+    a.href = u;
+    a.download = name;
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(u); }, 1000);
+  },
+
+  // ── FETCH ALL ──────────────────────────────────────────
+  fetchAll: function() {
+    if (!Auth.ok()) return;
+    var site = CFG.GSC_SITE || localStorage.getItem('si_gsc_site');
+    if (!site) {
+      Toast.show('warn','No site configured','Enter your GSC site URL in API Config.');
+      return;
+    }
+    var rb = document.getElementById('btn-refresh');
+    if (rb) rb.classList.add('spinning');
+    document.getElementById('chip-engine').className = 'chip chip-amber';
+    document.getElementById('chip-engine').textContent = 'Syncing…';
+    document.getElementById('status-dot').className = 'status-indicator connecting';
+
+    Toast.show('info','Fetching data','Loading GSC and GA4 data…');
+
+    var self = this;
+    // GSC
+    var gscPromises = [
+      new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .fetchGSCQueries();
+      }),
+      new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .fetchGSCPages();
+      }),
+      new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .fetchGSCTS();
+      }),
+      new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .fetchGSCDevices();
+      })
+    ];
+
+    Promise.allSettled(gscPromises).then(function(results) {
+      var gscResults = results.map(function(r) { return r.status === 'fulfilled' ? r.value : null; });
+      var gscErrors = results.filter(function(r) { return r.status === 'rejected'; });
+      if (gscErrors.length > 0) {
+        console.error('❌ GSC errors:', gscErrors.map(function(e) { return e.reason; }));
+        Toast.show('warn','GSC partial', gscErrors.length + ' of 4 requests failed.');
+      }
+      if (gscResults[0]) S.gscRows = gscResults[0];
+      if (gscResults[1]) S.gscPages = gscResults[1];
+      if (gscResults[2]) S.gscTs = gscResults[2];
+      if (gscResults[3]) S.gscDevices = gscResults[3];
+
+      var ga4p = CFG.GA4_PROP || localStorage.getItem('si_ga4_prop');
+      if (ga4p) {
+        var ga4Promises = [
+          new Promise(function(resolve, reject) {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .fetchGA4Overview();
+          }),
+          new Promise(function(resolve, reject) {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .fetchGA4Channels();
+          }),
+          new Promise(function(resolve, reject) {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .fetchGA4Pages();
+          }),
+          new Promise(function(resolve, reject) {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .fetchGA4TS();
+          })
+        ];
+        Promise.allSettled(ga4Promises).then(function(ga4Results) {
+          var ga4Vals = ga4Results.map(function(r) { return r.status === 'fulfilled' ? r.value : null; });
+          var ga4Errors = ga4Results.filter(function(r) { return r.status === 'rejected'; });
+          if (ga4Errors.length > 0) {
+            console.error('❌ GA4 errors:', ga4Errors.map(function(e) { return e.reason; }));
+            Toast.show('warn','GA4 partial', ga4Errors.length + ' of 4 requests failed.');
+          }
+          if (ga4Vals[0]) S.ga4Overview = ga4Vals[0];
+          if (ga4Vals[1]) S.ga4Channels = ga4Vals[1];
+          if (ga4Vals[2]) S.ga4Pages = ga4Vals[2];
+          if (ga4Vals[3]) S.ga4Ts = ga4Vals[3];
+          self.finishSync(rb);
+        });
+      } else {
+        self.finishSync(rb);
+      }
+    });
+  },
+
+  finishSync: function(rb) {
+    S.lastSync = new Date();
+    document.getElementById('sb-sync').innerHTML = '<i class="fas fa-sync-alt"></i> Synced ' + S.lastSync.toLocaleTimeString();
+    var qCount = (S.gscRows && S.gscRows.rows) ? S.gscRows.rows.length : 0;
+    var ga4Count = (S.ga4Overview && S.ga4Overview.rows) ? S.ga4Overview.rows.length : 0;
+    document.getElementById('sb-qcount').textContent = qCount + ' queries';
+    document.getElementById('chip-engine').className = 'chip chip-emerald';
+    document.getElementById('chip-engine').textContent = 'Synced';
+    document.getElementById('status-dot').className = 'status-indicator live';
+    if (rb) rb.classList.remove('spinning');
+    var opp = detectOpps((S.gscRows && S.gscRows.rows) || []);
+    var ob = document.getElementById('nav-opp-count');
+    if (ob) { ob.textContent = opp.length; ob.style.display = opp.length ? '' : 'none'; }
+    Toast.show('ok','Synced', qCount + ' GSC queries, ' + ga4Count + ' GA4 rows loaded.');
+    console.log('📊 Final GSC rows:', qCount);
+    console.log('📊 Final GA4 rows:', ga4Count);
+    if (S.ga4Overview) console.log('📊 GA4 Overview sample:', S.ga4Overview);
+    this.renderContent();
+  },
+
+  // ── ANIMATE KPIs ──────────────────────────────────────
+  animateKPIs: function() {
+    var kpis = document.querySelectorAll('.kpi-val');
+    for (var i = 0; i < kpis.length; i++) {
+      (function(el) {
+        var text = el.textContent;
+        var num = parseFloat(text.replace(/,/g,'').replace(/[^0-9.]/g,''));
+        if (isNaN(num)) return;
+        var suffix = text.replace(/[0-9.,]/g,'');
+        var duration = 800;
+        var start = performance.now();
+        function update(now) {
+          var progress = Math.min(1, (now - start) / duration);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * num);
+          el.textContent = current.toLocaleString() + suffix;
+          if (progress < 1) {
+            requestAnimationFrame(update);
+          } else {
+            el.textContent = text;
+          }
+        }
+        requestAnimationFrame(update);
+      })(kpis[i]);
+    }
+  }
+};
+
+// ── THEME ─────────────────────────────────────────────────
+function initTheme() {
+  var stored = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', stored);
+  updateThemeIcon(stored);
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeIcon(next);
+  });
+}
+function updateThemeIcon(theme) {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+}
+initTheme();
+
+// ── SIDEBAR COLLAPSE ────────────────────────────────────
+var sidebar = document.getElementById('sidebar');
+var collapseBtn = document.getElementById('btn-collapse');
+if (localStorage.getItem('sidebarCollapsed') === 'true') sidebar.classList.add('collapsed');
+collapseBtn.addEventListener('click', function() {
+  sidebar.classList.toggle('collapsed');
+  localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+});
+
+// ── WIRE UP ──────────────────────────────────────────────
+document.getElementById('btn-auth').onclick = function() { Auth.ok() ? Auth.signOut() : Auth.connect(); };
+document.getElementById('overlay-auth-btn').onclick = function() { Auth.connect(); };
+document.getElementById('btn-refresh').onclick = function() {
+  if (Auth.ok()) App.fetchAll();
+  else Toast.show('warn','Not connected','Authenticate first.');
+};
+document.getElementById('date-range').onchange = function(e) {
+  S.dateRange = +e.target.value;
+  if (Auth.ok()) App.fetchAll();
+};
+var navItems = document.querySelectorAll('.nav-item[data-view]');
+for (var i = 0; i < navItems.length; i++) {
+  (function(b) {
+    b.onclick = function() {
+      var overlay = document.getElementById('auth-overlay');
+      if (overlay.style.display !== 'none' && b.dataset.view === 'config') overlay.style.display = 'none';
+      App.go(b.dataset.view);
+    };
+  })(navItems[i]);
+}
+
+setInterval(function() {
+  var el = document.getElementById('tb-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', {hour12:false});
+}, 1000);
+
+(function() {
+  var site = localStorage.getItem('si_gsc_site');
+  var ga4p = localStorage.getItem('si_ga4_prop');
+  if (site) { CFG.GSC_SITE = site; document.getElementById('sb-domain').textContent = site; }
+  if (ga4p) CFG.GA4_PROP = ga4p;
+  var hasCid = !!localStorage.getItem('si_client_id');
+  if (hasCid) {
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('btn-auth').disabled = false;
+  } else {
+    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('btn-auth').disabled = true;
+  }
+})();
+
+App.go('dashboard');
+</script>
+</body>
+</html>
